@@ -1,0 +1,1721 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Global Pathways Consultants</title>
+
+<!-- =====================================================================
+     ✏️  EDIT EVERYTHING ABOUT THE BUSINESS HERE — rebrand in 2 minutes.
+     ===================================================================== -->
+<script>
+window.CONFIG = {
+  brand: {
+    name: "Global Pathways Consultants",
+    short: "Global Pathways",
+    initials: "GP",
+    tagline: "Study-abroad & student visa counselling",
+    city: "Lahore",
+    address: "Office 12, 2nd Floor, Main Boulevard, Gulberg III, Lahore",
+    phoneDisplay: "0300-1234567",
+    phoneTel: "+923001234567",
+    whatsapp: "923001234567",          // international format, digits only
+    email: "info@globalpathways.pk",
+  },
+  botName: "Pathways Assistant",
+
+  // Colours — change these and the whole app follows
+  theme: {
+    navy: "#0A1A3A", navy2: "#12295C", navy3: "#1D3B7C",
+    gold: "#C9A54C", goldSoft: "#F4EBD0", goldDeep: "#A3822F",
+    cream: "#FAF7F0", ink: "#0F172A",
+  },
+
+  hours: {
+    workingDays: [1, 2, 3, 4, 5, 6],   // 0 = Sunday … 6 = Saturday
+    open: "10:00", close: "19:00",
+    slotMinutes: 30,
+    daysAhead: 7,                       // how many days of slots the bot offers
+    minLeadMinutes: 30,                 // don't offer slots starting sooner than this
+    utcOffsetMinutes: 300,              // PKT = UTC+5
+    label: "Mon–Sat, 10:00 AM – 7:00 PM (PKT) · Sunday closed",
+  },
+
+  booking: { idPrefix: "GP-", startId: 1042, storageKey: "gp_appointments_v1" },
+
+  sessionTypes: [
+    { id: "discovery", name: "Free 15-min Discovery Call", short: "Discovery Call", minutes: 15, mode: "Phone / WhatsApp", icon: "📞", fee: "Free" },
+    { id: "office",    name: "30-min In-Office Counselling", short: "In-Office",     minutes: 30, mode: "At our office",    icon: "🏢" },
+    { id: "online",    name: "30-min Online Session",        short: "Online",        minutes: 30, mode: "Google Meet / Zoom", icon: "💻" },
+  ],
+
+  // flag.type: "v" = vertical tricolour, "h" = horizontal tricolour, "uk" = Union Jack
+  countries: [
+    { name: "Italy", flag: { type: "v", colors: ["#009246", "#FFFFFF", "#CE2B37"] },
+      aliases: ["italy", "italia", "itly", "italian", "اٹلی"],
+      tagline: "Affordable public universities & historic cities",
+      points: ["Public universities with income-based fees*", "Regional scholarships may be available*", "Many English-taught programmes"],
+      intakes: "Mainly September (some February)", minBudgetLakh: 20 },
+    { name: "Germany", flag: { type: "h", colors: ["#000000", "#DD0000", "#FFCE00"] },
+      aliases: ["germany", "german", "jarmany", "deutschland", "جرمنی"],
+      tagline: "World-class engineering, IT & research",
+      points: ["Many public universities charge low or no tuition*", "Blocked account usually needed for the visa*", "Strong for engineering & IT"],
+      intakes: "October (winter) & April (summer)", minBudgetLakh: 30 },
+    { name: "France", flag: { type: "v", colors: ["#002395", "#FFFFFF", "#ED2939"] },
+      aliases: ["france", "french", "paris", "فرانس"],
+      tagline: "Business, fashion & engineering schools",
+      points: ["Moderate public tuition at many universities*", "Applications often via Campus France", "Top business & engineering schools"],
+      intakes: "Mainly September (some January)", minBudgetLakh: 30 },
+    { name: "UK", flag: { type: "uk" },
+      aliases: ["uk", "u.k", "united kingdom", "england", "britain", "london", "scotland", "برطانیہ", "یوکے", "انگلینڈ"],
+      tagline: "Fast 1-year Master's & global recognition",
+      points: ["1-year Master's programmes", "CAS issued by your university", "Post-study work options*"],
+      intakes: "September (some January / May)", minBudgetLakh: 55 },
+  ],
+  otherCountries: ["Canada", "Australia", "USA", "Ireland", "Netherlands", "Hungary", "Spain", "Sweden", "Finland", "Poland", "Austria", "Belgium", "Portugal", "Turkey", "Malaysia", "China", "Cyprus", "Lithuania", "Japan", "South Korea", "New Zealand", "UAE"],
+  otherCountrySuggestions: ["Canada", "Australia", "Ireland", "Hungary"],
+  otherCountryMinBudgetLakh: 30,
+
+  educationLevels: ["Intermediate / A-Levels", "Bachelor's", "Master's"],
+  intakeMonths: [2, 9],                 // Feb & Sep offered as quick replies
+  budgetRanges: [
+    { label: "Under 20 lakh PKR", lakh: 12 },
+    { label: "20–40 lakh PKR",    lakh: 30 },
+    { label: "40–70 lakh PKR",    lakh: 55 },
+    { label: "70 lakh+ PKR",      lakh: 85 },
+  ],
+  fx: { EUR: 300, GBP: 355 },           // rough PKR per unit — used ONLY for internal lead scoring
+  scoring: { minCgpaRatio: 0.7, minPercent: 65, intakeWithinMonths: 9 },
+
+  documents: [
+    "Academic transcripts & degrees / certificates",
+    "Passport (if available)",
+    "CNIC (student & parent/guardian)",
+    "English test result (IELTS / PTE / Duolingo), if taken",
+    "CV / resume (Bachelor's & Master's applicants)",
+  ],
+
+  // FAQs: keys = regex the bot listens for. Answers in English / Roman Urdu / Urdu.
+  // {brand} {city} {phone} {hours} {address} are filled in automatically.
+  faqs: [
+    { id: "guarantee", chip: "Visa guarantee?", q: "Do you guarantee a visa or admission?",
+      keys: "guarant|guranty|gaurant|pakka visa|sure visa|confirm visa|100 ?%|success rate|ضمانت|گارنٹی",
+      a: { en: "Honestly, no one can guarantee a visa or admission — those decisions are made by universities and embassies. What we do: our counsellors review your profile carefully and guide you on your strongest options.",
+           ru: "Sach bataun to koi bhi visa ya admission ki guarantee nahi de sakta — yeh faisla university aur embassy karti hai. Hamare counsellors aap ki profile achi tarah review kar ke best options guide karte hain.",
+           ur: "سچ یہ ہے کہ کوئی بھی ویزا یا داخلے کی ضمانت نہیں دے سکتا — یہ فیصلہ یونیورسٹی اور ایمبیسی کرتی ہے۔ ہمارے کونسلرز آپ کی پروفائل کا بغور جائزہ لے کر بہترین آپشنز پر رہنمائی کرتے ہیں۔" } },
+    { id: "blocked", chip: "Blocked account?", q: "What is a blocked account (Germany)?",
+      keys: "blocked|sperrkonto|block account|proof of funds|bank statement|بلاک",
+      a: { en: "For Germany, students usually show living funds in a blocked account (Sperrkonto) — roughly a year's living costs, released monthly. The amount is set by German authorities and updated regularly; the counsellor will confirm the current figure for your case.",
+           ru: "Germany ke liye students ko aam tor par blocked account (Sperrkonto) mein taqreeban ek saal ke living expenses dikhane hote hain, jo har mahine milte hain. Amount German authorities set karti hain aur badalta rehta hai — counsellor current figure confirm karega.",
+           ur: "جرمنی کے لیے طلبہ کو عام طور پر بلاکڈ اکاؤنٹ (Sperrkonto) میں تقریباً ایک سال کے رہائشی اخراجات دکھانے ہوتے ہیں۔ رقم جرمن حکام طے کرتے ہیں اور بدلتی رہتی ہے — کونسلر موجودہ رقم کی تصدیق کرے گا۔" } },
+    { id: "cas", chip: "What is a CAS (UK)?", q: "What is a CAS for the UK?",
+      keys: "\\bcas\\b|confirmation of acceptance",
+      a: { en: "A CAS (Confirmation of Acceptance for Studies) is issued by your UK university after you accept an offer and meet its conditions (often including a deposit). You need it to apply for the UK Student visa.",
+           ru: "CAS (Confirmation of Acceptance for Studies) UK university deti hai jab aap offer accept kar lein aur conditions (aksar deposit) poori kar lein. UK Student visa apply karne ke liye yeh zaroori hai.",
+           ur: "CAS (Confirmation of Acceptance for Studies) برطانوی یونیورسٹی جاری کرتی ہے جب آپ آفر قبول کر لیں اور شرائط (اکثر ڈپازٹ) پوری کر لیں۔ UK اسٹوڈنٹ ویزا کے لیے یہ ضروری ہے۔" } },
+    { id: "scholarship", chip: "Scholarships?", q: "Are scholarships available?",
+      keys: "scholar|daad|chevening|\\bdsu\\b|wazifa|وظیفہ|اسکالرشپ",
+      a: { en: "Yes, options exist — e.g. DAAD (Germany), regional scholarships in Italy and Chevening (UK) — but eligibility and deadlines vary. Your counsellor will check which ones fit your profile.",
+           ru: "Ji haan, options hain — jaise DAAD (Germany), Italy ki regional scholarships aur Chevening (UK) — lekin eligibility aur deadlines alag hoti hain. Counsellor dekhega kaun si aap ki profile pe fit hain.",
+           ur: "جی ہاں، آپشنز موجود ہیں — جیسے DAAD (جرمنی)، اٹلی کی علاقائی اسکالرشپس اور Chevening (UK) — لیکن اہلیت اور ڈیڈ لائنز مختلف ہوتی ہیں۔ کونسلر دیکھے گا کون سی آپ کی پروفائل کے لیے موزوں ہیں۔" } },
+    { id: "tuition", chip: "Free study in Germany/Italy?", q: "Is study really (almost) free in Germany & Italy?",
+      keys: "free (education|study|studies|tuition|university|parhai|taleem)|tuition.?free|no tuition|low.?cost|cheap|sast[ai]|muft|مفت",
+      a: { en: "Many public universities in Germany charge little or no tuition (usually a semester fee). Italy's public universities have income-based fees and regional scholarships can help a lot. Living costs still apply and figures change — the counsellor will confirm.",
+           ru: "Germany ki kai public universities mein tuition bohat kam ya nahi hoti (sirf semester fee). Italy mein fees income-based hoti hai aur regional scholarships kaafi madad karti hain. Living cost phir bhi hoti hai aur figures badalte hain — counsellor confirm karega.",
+           ur: "جرمنی کی کئی سرکاری یونیورسٹیوں میں ٹیوشن بہت کم یا نہیں ہوتی (صرف سمسٹر فیس)۔ اٹلی میں فیس آمدنی کے مطابق ہوتی ہے اور علاقائی اسکالرشپس مدد کرتی ہیں۔ رہائشی اخراجات بہرحال ہوتے ہیں — کونسلر تصدیق کرے گا۔" } },
+    { id: "intakes", chip: "When are intakes?", q: "When are the main intakes?",
+      keys: "intake|deadline|session start|admission(s)? open|kab (start|shuru)|when .*(start|apply)|انٹیک",
+      a: { en: "Generally: Italy & France — mainly September (some February); Germany — October & April; UK — September plus some January/May. Deadlines are often 6–10 months earlier, so early planning helps!",
+           ru: "Aam tor par: Italy & France — zyada September (kuch February); Germany — October aur April; UK — September aur kuch January/May. Deadlines aksar 6–10 mahine pehle hoti hain, is liye jaldi planning behtar hai!",
+           ur: "عام طور پر: اٹلی اور فرانس — زیادہ تر ستمبر (کچھ فروری)؛ جرمنی — اکتوبر اور اپریل؛ UK — ستمبر اور کچھ جنوری/مئی۔ ڈیڈ لائنز اکثر 6–10 مہینے پہلے ہوتی ہیں، اس لیے جلد منصوبہ بندی بہتر ہے!" } },
+    { id: "ielts", chip: "IELTS needed?", q: "How much IELTS do I need?",
+      keys: "ielts|\\bpte\\b|duolingo|toefl|english test|\\bband\\b|\\bmoi\\b|آئلٹس",
+      a: { en: "Many programmes ask for around 6.0–6.5 overall; some accept PTE, Duolingo or an MOI letter. It differs by university and course — the counsellor will confirm the exact requirement for your case.",
+           ru: "Kai programmes overall 6.0–6.5 ke aas paas maangte hain; kuch PTE, Duolingo ya MOI letter bhi accept karte hain. Har university ka alag hota hai — counsellor aap ke case ki exact requirement confirm karega.",
+           ur: "کئی پروگرامز مجموعی طور پر تقریباً 6.0–6.5 مانگتے ہیں؛ کچھ PTE، Duolingo یا MOI لیٹر بھی قبول کرتے ہیں۔ ہر یونیورسٹی کی شرط مختلف ہے — کونسلر آپ کے کیس کی تصدیق کرے گا۔" } },
+    { id: "documents", chip: "Documents needed?", q: "What documents should I prepare?",
+      keys: "document|papers|kag(h)?zat|kya lana|what to bring|کاغذات|دستاویزات",
+      a: { en: "Typically: transcripts & degrees, passport, CNIC, English test result and a CV. The counsellor will confirm exactly what your case needs.",
+           ru: "Aam tor par: transcripts & degrees, passport, CNIC, English test result aur CV. Counsellor confirm karega ke aap ke case mein exactly kya chahiye.",
+           ur: "عام طور پر: ٹرانسکرپٹس اور ڈگریاں، پاسپورٹ، شناختی کارڈ، انگلش ٹیسٹ کا نتیجہ اور CV۔ کونسلر بتائے گا کہ آپ کے کیس میں بالکل کیا چاہیے۔" } },
+    { id: "work", q: "Can I work part-time while studying?",
+      keys: "part.?time|work while|\\bjob\\b|\\bkaam\\b|نوکری",
+      a: { en: "In most of these countries students can work limited part-time hours, but the rules differ and change. Your counsellor will explain the current rules for your destination.",
+           ru: "In zyada tar countries mein students limited part-time kaam kar sakte hain, lekin rules alag hain aur badalte rehte hain. Counsellor aap ki country ke current rules samjha dega.",
+           ur: "ان میں سے زیادہ تر ممالک میں طلبہ محدود پارٹ ٹائم کام کر سکتے ہیں، لیکن قواعد مختلف ہیں اور بدلتے رہتے ہیں۔ کونسلر موجودہ قواعد سمجھا دے گا۔" } },
+    { id: "gap", q: "I have a study gap — is that a problem?",
+      keys: "\\bgap\\b|study gap|gap year|وقفہ",
+      a: { en: "A study gap isn't automatically a deal-breaker — it depends on the programme and how it's explained. Our counsellor will review your case and guide you.",
+           ru: "Study gap har baar masla nahi hota — programme aur explanation pe depend karta hai. Hamara counsellor aap ka case review kar ke guide karega.",
+           ur: "تعلیمی وقفہ ہمیشہ رکاوٹ نہیں ہوتا — یہ پروگرام اور وضاحت پر منحصر ہے۔ ہمارا کونسلر آپ کا کیس دیکھ کر رہنمائی کرے گا۔" } },
+    { id: "location", q: "Where is your office & what are your timings?",
+      keys: "\\boffice\\b|address|location|timing|\\bhours\\b|open on|sunday|kahan (hai|hain|he)|کہاں|اوقات|دفتر",
+      a: { en: "We're at {address}. Open {hours}.",
+           ru: "Hamara office {address} mein hai. Timings: {hours}.",
+           ur: "ہمارا دفتر {address} میں ہے۔ اوقات: {hours}" } },
+    { id: "fee", chip: "Consultation fee?", q: "How much does a consultation cost?",
+      keys: "\\bfees?\\b|charges?|\\bprice\\b|\\bcost\\b|kharch|paise|paisay|rupees|فیس|خرچ|پیسے",
+      a: { en: "Our 15-min discovery call is completely free. University tuition and living costs depend on the country and programme — your counsellor will share current figures for your profile.",
+           ru: "Hamari 15-min discovery call bilkul free hai. University fees aur living cost country aur programme pe depend karti hai — counsellor aap ki profile ke hisaab se current figures batayega.",
+           ur: "ہماری 15 منٹ کی ڈسکوری کال بالکل مفت ہے۔ یونیورسٹی فیس اور رہائشی اخراجات ملک اور پروگرام پر منحصر ہیں — کونسلر آپ کی پروفائل کے مطابق موجودہ اعداد و شمار بتائے گا۔" } },
+  ],
+
+  chat: { autoOpenDelayMs: 3000, autoOpenOnMobile: false },  // on phones a greeting bubble pops instead of a full-screen takeover
+
+  // AI: uses window.claude.complete() if the host provides it, or POSTs to `endpoint`
+  // ({system, prompt} → {reply}). If neither is available the rule-based bot handles everything.
+  ai: {
+    enabled: true,
+    endpoint: null,
+    timeoutMs: 9000,
+    systemPrompt: `You are the friendly admissions assistant for {brand}, a study-abroad and student-visa consultancy in {city}, Pakistan (countries: Italy, Germany, France, UK and others). Your goal is to answer briefly and help the user book a consultation.
+RULES:
+- Reply in the user's language (English, Urdu script, or Roman Urdu) — mirror them.
+- 1–3 short lines. Warm, professional, local Pakistani tone.
+- Ask for at most ONE thing per message.
+- NEVER promise or imply visa approval, admission guarantees or success rates. Say our counsellors will review the profile and guide on the best options.
+- Never give final legal/immigration advice — say the counsellor will confirm exact requirements for their case.
+- Don't invent specific university fees or embassy rules; keep figures general and say they change.
+- If off-topic, politely steer back to study abroad / booking.
+- If the user only wants info, suggest the free 15-min discovery call.`,
+  },
+};
+
+// apply theme colours as CSS variables
+(function () {
+  var t = window.CONFIG.theme, r = document.documentElement.style;
+  r.setProperty("--navy", t.navy); r.setProperty("--navy-2", t.navy2); r.setProperty("--navy-3", t.navy3);
+  r.setProperty("--gold", t.gold); r.setProperty("--gold-soft", t.goldSoft); r.setProperty("--gold-deep", t.goldDeep);
+  r.setProperty("--cream", t.cream); r.setProperty("--ink", t.ink);
+  document.title = window.CONFIG.brand.name + " — Book a Free Consultation";
+})();
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,600&family=Noto+Nastaliq+Urdu:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com/3.4.5"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        navy: { DEFAULT: "var(--navy)", 2: "var(--navy-2)", 3: "var(--navy-3)" },
+        gold: { DEFAULT: "var(--gold)", soft: "var(--gold-soft)", deep: "var(--gold-deep)" },
+        cream: "var(--cream)", ink: "var(--ink)",
+      },
+      fontFamily: {
+        sans: ['"Plus Jakarta Sans"', "system-ui", "sans-serif"],
+        display: ['"Fraunces"', "Georgia", "serif"],
+        urdu: ['"Noto Nastaliq Urdu"', "serif"],
+      },
+    },
+  },
+};
+</script>
+<style>
+  html, body { background: var(--cream); color: var(--ink); }
+  body { font-family: "Plus Jakarta Sans", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .urdu { font-family: "Noto Nastaliq Urdu", serif; line-height: 2.1; font-size: 0.95em; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @keyframes popIn { from { opacity: 0; transform: translateY(16px) scale(.97); } to { opacity: 1; transform: none; } }
+  @keyframes dot { 0%, 80%, 100% { transform: translateY(0); opacity: .4; } 40% { transform: translateY(-4px); opacity: 1; } }
+  @keyframes ring { 0% { box-shadow: 0 0 0 0 rgba(201,165,76,.55); } 100% { box-shadow: 0 0 0 18px rgba(201,165,76,0); } }
+  .anim-up { animation: fadeUp .32s ease-out both; }
+  .anim-pop { animation: popIn .28s cubic-bezier(.2,.9,.3,1.2) both; }
+  .typing span { display: inline-block; width: 7px; height: 7px; border-radius: 9999px; background: var(--navy-3); margin: 0 2px; animation: dot 1.2s infinite; }
+  .typing span:nth-child(2) { animation-delay: .15s; } .typing span:nth-child(3) { animation-delay: .3s; }
+  .pulse-ring { animation: ring 1.8s ease-out infinite; }
+  .hero-bg {
+    background:
+      radial-gradient(900px 500px at 85% -10%, rgba(201,165,76,.28), transparent 60%),
+      radial-gradient(700px 400px at -10% 110%, rgba(29,59,124,.9), transparent 60%),
+      linear-gradient(160deg, var(--navy) 0%, var(--navy-2) 100%);
+  }
+  .grid-lines { background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px); background-size: 48px 48px; }
+  .chat-bg { background-color: #F6F3EC; background-image: radial-gradient(rgba(10,26,58,.05) 1px, transparent 1px); background-size: 18px 18px; }
+  .scroll-thin::-webkit-scrollbar { width: 6px; height: 6px; } .scroll-thin::-webkit-scrollbar-thumb { background: rgba(10,26,58,.18); border-radius: 9999px; }
+  .gold-text { background: linear-gradient(90deg, var(--gold), #F2D98B, var(--gold)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  details > summary { list-style: none; } details > summary::-webkit-details-marker { display: none; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<noscript>Please enable JavaScript to use the booking assistant.</noscript>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useMemo } = React;
+const C = window.CONFIG;
+
+/* ============================== UTILITIES ============================== */
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+let _uid = 0;
+const uid = () => (++_uid).toString(36) + Math.random().toString(36).slice(2, 7);
+const pad = n => String(n).padStart(2, "0");
+const OFF = C.hours.utcOffsetMinutes * 60000;
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+// All scheduling is done in PKT, independent of the visitor's device timezone.
+const pktNow = () => new Date(Date.now() + OFF);
+const ymdOf = d => `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+const todayYmd = () => ymdOf(pktNow());
+const parseYmd = s => { const [y, m, d] = s.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d)); };
+const addDays = (s, n) => { const d = parseYmd(s); d.setUTCDate(d.getUTCDate() + n); return ymdOf(d); };
+const dow = s => parseYmd(s).getUTCDay();
+const fmtDay = s => { const d = parseYmd(s); return `${DAYS[d.getUTCDay()]}, ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`; };
+const dayLabel = s => s === todayYmd() ? "Today" : s === addDays(todayYmd(), 1) ? "Tomorrow" : fmtDay(s);
+const fmtTime = t => { const [h, m] = t.split(":").map(Number); return `${((h + 11) % 12) + 1}:${pad(m)} ${h >= 12 ? "PM" : "AM"}`; };
+const toMin = t => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+const fromMin = m => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
+const slotEpoch = (date, time) => { const [y, mo, d] = date.split("-").map(Number); const [h, mi] = time.split(":").map(Number); return Date.UTC(y, mo - 1, d, h, mi) - OFF; };
+const monthsBetween = (a, b) => { const [ay, am] = a.split("-").map(Number); const [by, bm] = b.split("-").map(Number); return (by - ay) * 12 + (bm - am); };
+const pktYmdOfEpoch = ms => ymdOf(new Date(ms + OFF));
+const timeAgo = ms => { const s = (Date.now() - ms) / 1000; if (s < 60) return "just now"; if (s < 3600) return `${Math.floor(s / 60)} min ago`; if (s < 86400) return `${Math.floor(s / 3600)} h ago`; return `${Math.floor(s / 86400)} d ago`; };
+const clockTime = ms => new Date(ms).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+const hasUrdu = s => /[\u0600-\u06FF]/.test(s || "");
+
+const allSlotTimes = () => { const out = []; for (let m = toMin(C.hours.open); m + C.hours.slotMinutes <= toMin(C.hours.close); m += C.hours.slotMinutes) out.push(fromMin(m)); return out; };
+const isWorkingDay = s => C.hours.workingDays.includes(dow(s));
+const isBooked = (appts, date, time, ignoreId) => appts.some(a => a.date === date && a.time === time && a.status !== "Cancelled" && a.id !== ignoreId);
+const freeSlots = (appts, date, ignoreId) => {
+  if (!isWorkingDay(date)) return [];
+  const cutoff = Date.now() + C.hours.minLeadMinutes * 60000;
+  return allSlotTimes().filter(t => slotEpoch(date, t) > cutoff && !isBooked(appts, date, t, ignoreId));
+};
+const nextDays = (n, from) => Array.from({ length: n }, (_, i) => addDays(from || todayYmd(), i));
+const availableDays = (appts, ignoreId) => nextDays(C.hours.daysAhead).map(d => ({ date: d, slots: freeSlots(appts, d, ignoreId) })).filter(x => x.slots.length);
+
+const normPhone = raw => {
+  const s = String(raw || "").replace(/[\s\-().]/g, "");
+  let m;
+  if ((m = s.match(/^03(\d{9})$/))) return "+923" + m[1];
+  if ((m = s.match(/^(?:\+|00)?923(\d{9})$/))) return "+923" + m[1];
+  return null;
+};
+const extractPhone = text => { const m = String(text).match(/(?:\+|00)?(?:92|0)\s*3[\d\s-]{8,14}/); return m ? normPhone(m[0]) : null; };
+const fmtPhone = p => p && p.startsWith("+923") ? "0" + p.slice(3, 6) + "-" + p.slice(6) : p || "";
+
+const sessionOf = id => C.sessionTypes.find(s => s.id === id) || C.sessionTypes[0];
+const countryOf = name => C.countries.find(c => c.name === name);
+const countryLabel = a => a.country === "Other" ? `Other${a.countryOther ? " · " + a.countryOther : ""}` : a.country;
+const titleCase = s => s.split(/\s+/).map(w => /^[a-z]/i.test(w) ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w).join(" ");
+
+const downloadFile = (name, content, type) => {
+  try {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  } catch (e) { console.error(e); alert("Download isn't supported in this browser."); }
+};
+
+/* ============================== STORAGE ============================== */
+const STORE_KEY = C.booking.storageKey;
+const loadAppts = () => {
+  try { const raw = localStorage.getItem(STORE_KEY); if (raw) { const v = JSON.parse(raw); if (Array.isArray(v)) return v; } } catch (e) {}
+  return seedAppointments();
+};
+const saveAppts = v => { try { localStorage.setItem(STORE_KEY, JSON.stringify(v)); } catch (e) {} };
+
+function seedAppointments() {
+  const T = todayYmd();
+  const wd = n => { let d = addDays(T, n); while (!isWorkingDay(d)) d = addDays(d, n < 0 ? -1 : 1); return d; };
+  const intakeIn = m => { const [y, mo] = T.split("-").map(Number); const tot = y * 12 + (mo - 1) + m; const yy = Math.floor(tot / 12), mm = (tot % 12) + 1; return { intake: `${MONTHS[mm - 1]} ${yy}`, intakeDate: `${yy}-${pad(mm)}-01` }; };
+  const g = (kind, v, scale) => ({ grades: kind === "cgpa" ? `${v}/${scale} CGPA` : `${v}%`, gradesKind: kind, gradesValue: v, gradesScale: scale || null });
+  const en = (test, score) => test ? { english: `${test} ${score}`, englishTest: test, englishScore: score, englishDone: true } : { english: "Not yet", englishTest: "None", englishScore: null, englishDone: false };
+  const ago = h => Date.now() - h * 3600000;
+  const p = C.booking.idPrefix;
+  return [
+    { id: p + "1041", name: "Hira Khan", phone: "+923331234567", country: "Germany", education: "Master's (MSc Data Science)", ...g("cgpa", 3.0, 4), ...en("IELTS", "6.5"), budget: "Under 20 lakh PKR", budgetLakh: 12, ...intakeIn(5), decider: "Student", session: "office", date: wd(0), time: "12:30", status: "Confirmed", createdAt: ago(3), lang: "en" },
+    { id: p + "1040", name: "Bilal Hussain", phone: "+923004561234", country: "Italy", education: "Intermediate / A-Levels (ICS)", ...g("percent", 64), ...en("PTE", "58"), budget: "Under 20 lakh PKR", budgetLakh: 12, ...intakeIn(10), decider: "Parent", session: "office", date: wd(1), time: "14:00", status: "Cancelled", createdAt: ago(40), lang: "ru" },
+    { id: p + "1039", name: "Zainab Malik", phone: "+923217654321", country: "UK", education: "Bachelor's (BS Psychology)", ...g("cgpa", 3.1, 4), ...en("IELTS", "6.0"), budget: "40–70 lakh PKR", budgetLakh: 55, ...intakeIn(9), decider: "Both", session: "online", date: wd(-2), time: "16:00", status: "No-show", createdAt: ago(96), lang: "en" },
+    { id: p + "1038", name: "Usman Ali", phone: "+923451122334", country: "Other", countryOther: "Hungary", education: "Bachelor's (BE Mechanical)", ...g("percent", 72), ...en(null), budget: "20–40 lakh PKR", budgetLakh: 30, ...intakeIn(6), decider: "Student", session: "discovery", date: wd(-1), time: "10:30", status: "Completed", createdAt: ago(120), lang: "ru" },
+    { id: p + "1037", name: "Fatima Noor", phone: "+923012233445", country: "France", education: "Master's (MBA)", ...g("cgpa", 3.6, 4), ...en("Duolingo", "120"), budget: "70 lakh+ PKR", budgetLakh: 85, ...intakeIn(8), decider: "Both", session: "online", date: wd(3), time: "12:00", status: "Confirmed", createdAt: ago(70), lang: "en" },
+    { id: p + "1036", name: "Hamza Tariq", phone: "+923129988776", country: "UK", education: "Bachelor's (BBA)", ...g("cgpa", 2.6, 4), ...en(null), budget: "20–40 lakh PKR", budgetLakh: 30, intake: "Not decided", intakeDate: null, decider: "Student", session: "discovery", date: wd(0), time: "17:30", status: "New", createdAt: ago(1.5), lang: "ru" },
+    { id: p + "1035", name: "Ayesha Siddiqui", phone: "+923365544332", country: "Italy", education: "Intermediate / A-Levels (FSc Pre-Medical)", ...g("percent", 86), ...en("IELTS", "6.5"), budget: "20–40 lakh PKR", budgetLakh: 30, ...intakeIn(10), decider: "Parent", session: "office", date: wd(2), time: "15:00", status: "New", createdAt: ago(30), lang: "ur" },
+    { id: p + "1034", name: "Ahmed Raza", phone: "+923214567890", country: "Germany", education: "Bachelor's (BS Computer Science)", ...g("cgpa", 3.4, 4), ...en("IELTS", "7.0"), budget: "40–70 lakh PKR", budgetLakh: 55, ...intakeIn(7), decider: "Student", session: "online", date: wd(1), time: "11:00", status: "Confirmed", createdAt: ago(50), lang: "en" },
+  ];
+}
+
+/* ============================== LEAD SCORING ============================== */
+function scoreLead(a) {
+  const min = countryOf(a.country)?.minBudgetLakh ?? C.otherCountryMinBudgetLakh;
+  const g = a.gradesKind === "cgpa" ? a.gradesValue / (a.gradesScale || 4) >= C.scoring.minCgpaRatio
+          : a.gradesKind === "percent" ? a.gradesValue >= C.scoring.minPercent : false;
+  const e = !!a.englishDone;
+  const b = a.budgetLakh != null && a.budgetLakh >= min;
+  const months = a.intakeDate ? monthsBetween(todayYmd(), a.intakeDate) : null;
+  const i = months != null && months >= 0 && months <= C.scoring.intakeWithinMonths;
+  const cl = countryLabel(a);
+  const checks = [
+    { ok: g, short: "Grades", label: g ? `Good grades (${a.grades})` : `Grades below target (${a.grades || "n/a"})` },
+    { ok: e, short: "English test", label: e ? `English test done (${a.english})` : "No English test yet" },
+    { ok: b, short: "Budget", label: b ? `Budget fits ${cl} (~${a.budgetLakh} lakh)` : a.budgetLakh == null ? "Budget unclear" : `Budget below typical ${cl} range` },
+    { ok: i, short: "Intake ≤9 mo", label: i ? `Intake in ${months} mo (${a.intake})` : months == null ? "Intake not decided" : months < 0 ? "Intake date passed" : `Intake ${months} mo away (${a.intake})` },
+  ];
+  const pts = checks.filter(x => x.ok).length;
+  return { level: pts === 4 ? "Hot" : pts >= 2 ? "Warm" : "Cold", pts, checks };
+}
+
+/* ============================== LANGUAGE ============================== */
+const ROMAN = new Set("hai hain hay hy kya kia mein mai main nahi nahin nai chahta chahti chahiye chaiye kitni kitna kitne aap ap mujhe mujhay muje kab kaise kese kaisay theek thik haan han shukriya shukria acha achha accha karna karni karta karti kar krna hoon hun ho ka ki ke ko se bhi abhi baad batao bataen bataein bta mera meri mere naam raha rahi wala wali kuch sirf agar lekin magar paisay paise ji jee yar yaar bhai kahan kyun kyon sakta sakti hoga hogi dena lena lagta parhna parhai parhni chahta hu hy wese waise matlab kahin koi aur".split(" "));
+const EN = new Set("the is are i my what how want study and have am would like need will when which about with it this that thanks thank please can you your do does for of".split(" "));
+function detectLang(text, cur) {
+  if (hasUrdu(text)) return "ur";
+  const words = text.toLowerCase().match(/[a-z']+/g) || [];
+  if (!words.length) return cur;
+  let r = 0, e = 0;
+  for (const w of words) { if (ROMAN.has(w)) r++; if (EN.has(w)) e++; }
+  if (r >= 2 && r >= e) return "ru";
+  if (r === 1 && e === 0 && words.length <= 4) return "ru";
+  if (e >= 1 && e > r) return "en";
+  return cur;
+}
+
+const STR = {
+  greet: ["Assalam-o-Alaikum! 👋 Welcome to {brand}.", "Assalam-o-Alaikum! 👋 {brand} mein khush aamdeed.", "السلام علیکم! 👋 {brand} میں خوش آمدید۔"],
+  greet2: ["I can book you a free consultation with our counsellors in about 2 minutes. Feel free to chat in English, Urdu or Roman Urdu 🙂", "Main 2 minute mein aap ki free consultation hamare counsellors ke saath book kar sakta hoon. English, Urdu ya Roman Urdu — jaise aasaan ho 🙂", "میں 2 منٹ میں ہمارے کونسلرز کے ساتھ آپ کی مفت کنسلٹیشن بک کر سکتا ہوں۔ انگریزی، اردو یا رومن اردو — جیسے آسان ہو 🙂"],
+  askCountry: ["Which country are you interested in studying in?", "Aap kis country mein parhna chahte hain?", "آپ کس ملک میں تعلیم حاصل کرنا چاہتے ہیں؟"],
+  askCountryAfterFaq: ["Want me to book you a free 15-min discovery call? Just pick your country 👇", "Kya main aap ki free 15-min discovery call book kar doon? Bas country select karein 👇", "کیا میں آپ کی مفت 15 منٹ کی ڈسکوری کال بک کر دوں؟ بس ملک منتخب کریں 👇"],
+  otherCountry: ["Which country do you have in mind?", "Kaun si country zehan mein hai?", "آپ کے ذہن میں کون سا ملک ہے؟"],
+  countryAck: ["Great choice — {country} is a popular option for Pakistani students.", "Zabardast — {country} Pakistani students mein kaafi popular hai.", "بہترین انتخاب — {country} پاکستانی طلبہ میں کافی مقبول ہے۔"],
+  otherAck: ["Noted — our counsellors also guide students for {country}.", "Theek hai — hamare counsellors {country} ke liye bhi guide karte hain.", "ٹھیک ہے — ہمارے کونسلرز {country} کے لیے بھی رہنمائی کرتے ہیں۔"],
+  countryNoted: ["Noted — I've updated your country to {country} ✔", "Theek hai — country {country} kar di ✔", "ٹھیک ہے — ملک {country} کر دیا ✔"],
+  askName: ["May I have your full name?", "Aap ka poora naam kya hai?", "آپ کا پورا نام کیا ہے؟"],
+  badName: ["Sorry, I didn't catch your name — could you type just your full name?", "Maaf kijiye, naam samajh nahi aaya — sirf apna poora naam likh dein?", "معذرت، نام سمجھ نہیں آیا — براہ کرم صرف اپنا پورا نام لکھ دیں۔"],
+  niceMeet: ["Nice to meet you, {first}! 😊", "Aap se mil kar khushi hui, {first}! 😊", "آپ سے مل کر خوشی ہوئی، {first}! 😊"],
+  askEducation: ["What's your current or last completed education?", "Aap ki current ya last education kya hai?", "آپ کی موجودہ یا آخری تعلیم کیا ہے؟"],
+  askGrades: ["And your CGPA or percentage in that? (e.g. 3.2 or 75%)", "Aur us mein CGPA ya percentage kitni thi? (jaise 3.2 ya 75%)", "اور اس میں آپ کا CGPA یا فیصد کتنا تھا؟ (مثلاً 3.2 یا 75%)"],
+  badGrades: ["Please share it as a number — e.g. 3.1 CGPA or 72%.", "Number mein bata dein — jaise 3.1 CGPA ya 72%.", "براہ کرم نمبر میں بتائیں — مثلاً 3.1 CGPA یا 72%۔"],
+  gotIt: ["Got it 👍", "Theek hai 👍", "ٹھیک ہے 👍"],
+  askEnglish: ["Have you taken an English test yet — IELTS, PTE or Duolingo?", "Kya aap ne koi English test diya hai — IELTS, PTE ya Duolingo?", "کیا آپ نے کوئی انگلش ٹیسٹ دیا ہے — IELTS، PTE یا Duolingo؟"],
+  askScore: ["What was your overall {test} score?", "Aap ka overall {test} score kitna tha?", "آپ کا مجموعی {test} اسکور کتنا تھا؟"],
+  niceScore: ["Nice, that helps 👌", "Bohat khoob, is se madad milegi 👌", "بہت خوب، اس سے مدد ملے گی 👌"],
+  englishNone: ["No problem — many students take it after counselling. We'll guide you on timing.", "Koi masla nahi — kaafi students counselling ke baad test dete hain. Hum timing guide kar denge.", "کوئی مسئلہ نہیں — کئی طلبہ کونسلنگ کے بعد ٹیسٹ دیتے ہیں۔ ہم وقت کے بارے میں رہنمائی کریں گے۔"],
+  askIntake: ["Which intake are you aiming for?", "Aap kis intake ke liye plan kar rahe hain?", "آپ کس انٹیک کے لیے منصوبہ بنا رہے ہیں؟"],
+  askBudget: ["Roughly what budget is your family planning for the first year (tuition + living)?", "Pehle saal ke liye (fees + rehna) taqreeban kitna budget plan hai?", "پہلے سال کے لیے (فیس + رہائش) تقریباً کتنا بجٹ ہے؟"],
+  askDecider: ["Who'll make the final decision — you or your parents?", "Final faisla kaun karega — aap ya aap ke walidain?", "حتمی فیصلہ کون کرے گا — آپ یا آپ کے والدین؟"],
+  askPhone: ["What's your phone / WhatsApp number? (e.g. 03001234567)", "Aap ka phone / WhatsApp number kya hai? (jaise 03001234567)", "آپ کا فون / واٹس ایپ نمبر کیا ہے؟ (مثلاً 03001234567)"],
+  badPhone: ["Hmm, that doesn't look like a Pakistani mobile number. Please use 03XXXXXXXXX or +923XXXXXXXXX.", "Yeh number sahi nahi lag raha. Please 03XXXXXXXXX ya +923XXXXXXXXX format mein likhein.", "یہ نمبر درست نہیں لگ رہا۔ براہ کرم 03XXXXXXXXX یا +923XXXXXXXXX میں لکھیں۔"],
+  askSession: ["Thanks! Which type of session suits you best?", "Shukriya! Aap ke liye kaun sa session behtar rahega?", "شکریہ! آپ کے لیے کون سا سیشن بہتر رہے گا؟"],
+  thanksPhone: ["Thanks! Let's pick a time for your free discovery call.", "Shukriya! Ab free discovery call ka time select karte hain.", "شکریہ! اب مفت ڈسکوری کال کا وقت منتخب کرتے ہیں۔"],
+  askDay: ["Here are the available days 📅 (Pakistan time)", "Yeh available din hain 📅 (Pakistan time)", "یہ دستیاب دن ہیں 📅 (پاکستان کا وقت)"],
+  askTime: ["Free slots on {day}:", "{day} ko yeh slots free hain:", "{day} کو یہ اوقات دستیاب ہیں:"],
+  noDays: ["Sorry, we're fully booked for the next 7 days. Please call us at {phone} and we'll fit you in.", "Maaf kijiye, agle 7 din full hain. Please {phone} pe call karein, hum time nikal lenge.", "معذرت، اگلے 7 دن مکمل بک ہیں۔ براہ کرم {phone} پر کال کریں۔"],
+  notAvailable: ["Sorry, that one isn't free. Please choose from the available options 👇", "Maaf kijiye, yeh available nahi. Neeche diye gaye options mein se select karein 👇", "معذرت، یہ دستیاب نہیں۔ براہ کرم نیچے دیے گئے آپشنز میں سے منتخب کریں 👇"],
+  slotTaken: ["Oops, that slot was just taken. Please pick another one.", "Oh, yeh slot abhi book ho gaya. Please koi aur select karein.", "معذرت، یہ وقت ابھی بک ہو گیا۔ براہ کرم کوئی اور منتخب کریں۔"],
+  summary: ["Almost done! Please review your booking 👇", "Bas ho gaya! Apni booking check kar lein 👇", "تقریباً مکمل! اپنی بکنگ دیکھ لیں 👇"],
+  booked: ["✅ You're booked, {first}! Our counsellor will review your profile and guide you on the best options.", "✅ Aap ki booking ho gayi, {first}! Hamara counsellor aap ki profile review kar ke best options guide karega.", "✅ آپ کی بکنگ ہو گئی، {first}! ہمارا کونسلر آپ کی پروفائل کا جائزہ لے کر بہترین آپشنز پر رہنمائی کرے گا۔"],
+  anythingElse: ["Anything else I can help with?", "Aur kisi cheez mein madad chahiye?", "کیا میں کسی اور چیز میں مدد کر سکتا ہوں؟"],
+  back: ["Coming back to your booking —", "Wapis booking ki taraf —", "واپس بکنگ کی طرف —"],
+  steer: ["I'm best at study-abroad questions and booking consultations 🙂", "Main study abroad ke sawalat aur consultation booking mein madad karta hoon 🙂", "میں بیرونِ ملک تعلیم کے سوالات اور کنسلٹیشن بکنگ میں مدد کرتا ہوں 🙂"],
+  later: ["No problem at all! Just so you know, the 15-min discovery call is free with no obligation — and early planning helps with deadlines. Shall I hold a slot for you?", "Bilkul koi masla nahi! Bas itna bata doon ke 15-min discovery call free hai, koi obligation nahi — aur jaldi planning se deadlines miss nahi hoti. Ek slot rakh doon?", "بالکل کوئی مسئلہ نہیں! بس یہ بتا دوں کہ 15 منٹ کی ڈسکوری کال مفت ہے، کوئی پابندی نہیں — اور جلد منصوبہ بندی سے ڈیڈ لائنز نہیں نکلتیں۔ ایک وقت رکھ دوں؟"],
+  infoOnly: ["Happy to help! The easiest way is our free 15-min discovery call — a counsellor answers your questions for your specific profile. Want one?", "Zaroor! Sab se aasaan tareeqa hamari free 15-min discovery call hai — counsellor aap ki profile ke hisaab se sawalon ke jawab dega. Book kar doon?", "ضرور! سب سے آسان طریقہ ہماری مفت 15 منٹ کی ڈسکوری کال ہے — کونسلر آپ کی پروفائل کے مطابق جواب دے گا۔ بک کر دوں؟"],
+  laterOk: ["Sure! Just open this chat anytime — I'm here 24/7. 😊", "Theek hai! Jab chahein yeh chat khol lein — main 24/7 yahan hoon. 😊", "ٹھیک ہے! جب چاہیں یہ چیٹ کھول لیں — میں 24/7 یہاں ہوں۔ 😊"],
+  human: ["You can reach our team at {phone} ({hours}) or on WhatsApp. I can also book you a free call right now.", "Aap hamari team se {phone} pe baat kar sakte hain ({hours}) ya WhatsApp pe. Main abhi free call bhi book kar sakta hoon.", "آپ ہماری ٹیم سے {phone} پر رابطہ کر سکتے ہیں ({hours}) یا واٹس ایپ پر۔ میں ابھی مفت کال بھی بک کر سکتا ہوں۔"],
+  thanks: ["You're welcome! 😊", "Koi baat nahi! 😊", "کوئی بات نہیں! 😊"],
+  hello: ["Wa Alaikum Assalam! 😊", "Wa Alaikum Assalam! 😊", "وعلیکم السلام! 😊"],
+  askQuestion: ["Sure — type your question, or tap one below 👇", "Zaroor — apna sawal likhein, ya neeche se select karein 👇", "ضرور — اپنا سوال لکھیں، یا نیچے سے منتخب کریں 👇"],
+  manageId: ["Sure — please share your booking ID (e.g. {prefix}1042).", "Zaroor — apna booking ID bata dein (jaise {prefix}1042).", "ضرور — اپنا بکنگ آئی ڈی بتا دیں (مثلاً {prefix}1042)۔"],
+  badId: ["That doesn't look like a booking ID — it looks like {prefix}1042.", "Yeh booking ID nahi lag raha — yeh {prefix}1042 jaisa hota hai.", "یہ بکنگ آئی ڈی نہیں لگ رہا — یہ {prefix}1042 جیسا ہوتا ہے۔"],
+  managePhone: ["Thanks. Now the phone number used for that booking?", "Shukriya. Ab woh phone number jo booking mein diya tha?", "شکریہ۔ اب وہ فون نمبر جو بکنگ میں دیا تھا؟"],
+  manageNotFound: ["I couldn't find a booking with that ID and phone. Please double-check, or call us at {phone}.", "Is ID aur number se koi booking nahi mili. Please dobara check karein, ya {phone} pe call karein.", "اس آئی ڈی اور نمبر سے کوئی بکنگ نہیں ملی۔ دوبارہ چیک کریں یا {phone} پر کال کریں۔"],
+  manageFound: ["Found it! What would you like to do?", "Mil gayi! Aap kya karna chahenge?", "مل گئی! آپ کیا کرنا چاہیں گے؟"],
+  cancelled: ["Your booking {id} has been cancelled. You can book again anytime 🙂", "Aap ki booking {id} cancel ho gayi. Jab chahein dobara book kar sakte hain 🙂", "آپ کی بکنگ {id} منسوخ ہو گئی۔ جب چاہیں دوبارہ بک کر سکتے ہیں 🙂"],
+  alreadyCancelled: ["This booking is already cancelled. Want to book a new slot?", "Yeh booking pehle hi cancel hai. Naya slot book karein?", "یہ بکنگ پہلے ہی منسوخ ہے۔ نیا وقت بک کریں؟"],
+  rescheduleStart: ["No problem, let's find a new time.", "Koi masla nahi, naya time dhoondte hain.", "کوئی مسئلہ نہیں، نیا وقت تلاش کرتے ہیں۔"],
+  rescheduled: ["🔁 Done! Your booking {id} has been moved to the new time.", "🔁 Ho gaya! Aap ki booking {id} naye time pe shift ho gayi.", "🔁 ہو گیا! آپ کی بکنگ {id} نئے وقت پر منتقل ہو گئی۔"],
+  kept: ["Great, your booking stays as it is. See you then! 👋", "Behtareen, booking waisi hi rahegi. Milte hain! 👋", "بہترین، بکنگ ویسی ہی رہے گی۔ ملتے ہیں! 👋"],
+  restart: ["Let's book a new consultation 🙂", "Chaliye nayi consultation book karte hain 🙂", "چلیں نئی کنسلٹیشن بک کرتے ہیں 🙂"],
+  // chip labels
+  c_other: ["🌍 Other country", "🌍 Koi aur country", "🌍 کوئی اور ملک"],
+  c_manage: ["🔁 Manage my booking", "🔁 Booking change / cancel", "🔁 بکنگ تبدیل / منسوخ"],
+  c_question: ["💬 Ask a question", "💬 Sawal poochein", "💬 سوال پوچھیں"],
+  c_new: ["📅 New booking", "📅 Nayi booking", "📅 نئی بکنگ"],
+  c_notyet: ["Not yet", "Abhi nahi", "ابھی نہیں"],
+  c_notsure: ["Not sure yet", "Abhi pata nahi", "ابھی طے نہیں"],
+  c_dontRemember: ["Don't remember", "Yaad nahi", "یاد نہیں"],
+  c_student: ["I'm the student", "Main student hoon", "میں طالب علم ہوں"],
+  c_parent: ["Parent / guardian", "Walidain / guardian", "والدین / سرپرست"],
+  c_both: ["Both together", "Dono mil kar", "دونوں مل کر"],
+  c_confirm: ["✅ Confirm booking", "✅ Confirm karein", "✅ تصدیق کریں"],
+  c_change: ["Change time", "Time change karein", "وقت تبدیل کریں"],
+  c_otherDay: ["← Other day", "← Koi aur din", "← کوئی اور دن"],
+  c_bookFree: ["Yes, book a free call", "Haan, free call book karein", "جی، مفت کال بک کریں"],
+  c_maybeLater: ["Maybe later", "Baad mein", "بعد میں"],
+  c_bookNow: ["📅 Book consultation", "📅 Consultation book karein", "📅 کنسلٹیشن بک کریں"],
+  c_reschedule: ["🔁 Reschedule", "🔁 Time badlein", "🔁 وقت تبدیل کریں"],
+  c_cancelBooking: ["✖ Cancel booking", "✖ Cancel karein", "✖ منسوخ کریں"],
+  c_keep: ["Keep it", "Aise hi rehne dein", "ایسے ہی رہنے دیں"],
+  c_tryAgain: ["Try again", "Dobara try karein", "دوبارہ کوشش کریں"],
+};
+const GLOBAL_VARS = { brand: C.brand.name, city: C.brand.city, phone: C.brand.phoneDisplay, hours: C.hours.label, address: C.brand.address, prefix: C.booking.idPrefix };
+const fill = (s, vars = {}) => s.replace(/\{(\w+)\}/g, (_, k) => vars[k] != null ? vars[k] : GLOBAL_VARS[k] != null ? GLOBAL_VARS[k] : "");
+const tr = (k, lang, vars) => { const e = STR[k]; if (!e) return k; return fill(e[lang === "ru" ? 1 : lang === "ur" ? 2 : 0] || e[0], vars); };
+const faqAnswer = (f, lang) => fill(f.a[lang] || f.a.en);
+
+/* ============================== PARSERS ============================== */
+const QUESTION_RX = /\?|؟|^\s*(what|how|why|when|where|which|can|could|is|are|do|does|will|should)\b|\b(kya|kia|kaise|kese|kaisay|kitni|kitna|kitne|kahan|kyun|kyon|konsa|kaunsa)\b|کیسے|کتنی|کتنا|کیوں/i;
+const isQuestion = t => QUESTION_RX.test(t);
+const NAME_STOP = new Set("visa fee fees ielts pte germany italy uk france study hello hi hey what how yes no ok okay kya hai nahi thanks thank later baad guarantee price cost cancel reschedule book booking admission scholarship university help info information the is are please sure idk haan ji acha theek student parent bachelor bachelors master masters intermediate abroad consultation salam aoa assalam".split(" "));
+
+function extractName(text) {
+  let t = text.trim().replace(/[.!,]+$/, "");
+  t = t.replace(/^(hi|hello|salam|aoa)[,!\s]+/i, "");
+  t = t.replace(/^(my name is|my name's|name is|my name|i am|i'm|im|this is|it's|mera naam|mera name|naam|main|mein)\s+/i, "");
+  t = t.replace(/\s+(hai|hy|he|hoon|hun|here)$/i, "");
+  if (!/^[A-Za-z\u0600-\u06FF][A-Za-z\u0600-\u06FF .'-]{1,39}$/.test(t)) return null;
+  const words = t.split(/\s+/);
+  if (words.length > 4 || words.some(w => NAME_STOP.has(w.toLowerCase()))) return null;
+  return titleCase(t);
+}
+
+function matchCountry(text) {
+  const t = " " + text.toLowerCase() + " ";
+  for (const c of C.countries) if (c.aliases.some(a => new RegExp(`(^|[^a-z])${a.replace(/[.]/g, "\\.")}([^a-z]|$)`).test(t))) return { country: c.name };
+  for (const o of C.otherCountries) if (t.includes(o.toLowerCase())) return { country: "Other", other: o };
+  if (/\bother|koi aur|aur country|کوئی اور/.test(t)) return { country: "Other" };
+  return null;
+}
+
+function parseEducation(text, strict) {
+  const t = text.toLowerCase();
+  if (/\b(master|masters|ms|mphil|msc|mba|ma|mcs|mcom)\b|ماسٹر/.test(t)) return `Master's${/\b(ms|msc|mba|mphil|mcs)\b/.test(t) ? " (" + t.match(/\b(ms|msc|mba|mphil|mcs)\b/)[1].toUpperCase() + ")" : ""}`;
+  if (/\b(bachelor|bachelors|bs|bsc|ba|bcom|bba|be|bcs|bds|mbbs|graduat\w*|undergrad\w*|degree)\b|بیچلر|گریجویشن/.test(t)) return "Bachelor's";
+  if (/\b(inter|intermediate|fsc|f\.sc|fa|ics|icom|a ?levels?|matric|o ?levels?|hssc|12th)\b|انٹر|میٹرک/.test(t)) return "Intermediate / A-Levels";
+  if (!strict && text.length <= 50) return titleCase(text.trim());
+  return null;
+}
+
+function parseGrades(text) {
+  const t = text.toLowerCase().replace(/,/g, "");
+  let m = t.match(/(\d{2,4})\s*\/\s*(\d{3,4})/);
+  if (m) { const p = +m[1] / +m[2] * 100; if (p > 0 && p <= 100) return { kind: "percent", value: Math.round(p * 10) / 10, scale: null, label: `${Math.round(p)}% (${m[1]}/${m[2]})` }; }
+  m = t.match(/(\d+(?:\.\d+)?)\s*(?:\/\s*(4|5|10)\b)?/);
+  if (!m) return null;
+  const v = parseFloat(m[1]);
+  if (/%|percent|fees?ad|فیصد|marks/.test(t) || v > 10) { if (v <= 0 || v > 100) return null; return { kind: "percent", value: v, scale: null, label: `${v}%` }; }
+  const scale = m[2] ? +m[2] : v <= 4 ? 4 : v <= 5 ? 5 : 10;
+  if (v <= 0 || v > scale) return null;
+  return { kind: "cgpa", value: v, scale, label: `${v}/${scale} CGPA` };
+}
+
+function parseEnglish(text) {
+  const t = text.toLowerCase();
+  const tests = [["IELTS", /ielts|آئلٹس/], ["PTE", /\bpte\b/], ["Duolingo", /duolingo|\bdet\b/], ["TOEFL", /toefl/], ["MOI letter", /\bmoi\b|medium of instruction/]];
+  if (/not yet|\bno\b|\bnope\b|nahi|nahin|\bnai\b|none|haven'?t|have not|not taken|not given|planning|plan to|ابھی نہیں|نہیں/.test(t)) return { none: true };
+  for (const [name, rx] of tests) if (rx.test(t)) { const n = t.match(/(\d+(?:\.\d+)?)/); return { test: name, score: name === "MOI letter" ? "✓" : n ? n[1] : null }; }
+  const n = t.match(/^\s*(\d(?:\.\d)?)\s*(bands?)?\s*$/);
+  if (n) return { test: "IELTS", score: n[1] };
+  return null;
+}
+
+function upcomingIntakes(count = 3) {
+  const [y, m] = todayYmd().split("-").map(Number);
+  const out = [];
+  for (let k = 1; out.length < count && k < 36; k++) {
+    const tot = y * 12 + (m - 1) + k, yy = Math.floor(tot / 12), mm = (tot % 12) + 1;
+    if (C.intakeMonths.includes(mm)) out.push({ label: `${MONTHS[mm - 1]} ${yy}`, date: `${yy}-${pad(mm)}-01` });
+  }
+  return out;
+}
+const MONTH_RX = [/\bjan(uary)?\b|جنوری/, /\bfeb(ruary)?\b|\bspring\b|فروری/, /\bmar(ch)?\b|مارچ/, /\bapr(il)?\b|\bsummer\b|اپریل/, /\bmay\b|مئی/, /\bjune?\b|جون/, /\bjuly?\b|جولائی/, /\baug(ust)?\b|اگست/, /\bsep(t|tember)?\b|\bfall\b|\bautumn\b|ستمبر/, /\boct(ober)?\b|\bwinter\b|اکتوبر/, /\bnov(ember)?\b|نومبر/, /\bdec(ember)?\b|دسمبر/];
+function parseIntake(text) {
+  const t = text.toLowerCase();
+  if (/not sure|pata nahi|pta nahi|no idea|undecided|any|decide nahi|طے نہیں|معلوم نہیں/.test(t)) return { label: "Not decided", date: null };
+  let mo = null; MONTH_RX.forEach((rx, i) => { if (mo == null && rx.test(t)) mo = i + 1; });
+  let yr = null; const ym = t.match(/\b(20[2-3]\d)\b/) || t.match(/'(\d{2})\b/) || (mo ? t.match(/\b(2[5-9]|3[0-2])\b/) : null);
+  if (ym) yr = ym[1].length === 2 ? 2000 + +ym[1] : +ym[1];
+  if (!mo && !yr) return null;
+  const [cy, cm] = todayYmd().split("-").map(Number);
+  if (mo && !yr) yr = mo > cm ? cy : cy + 1;
+  if (!mo) return { label: `${yr} (month TBD)`, date: `${yr}-09-01` };
+  return { label: `${MONTHS[mo - 1]} ${yr}`, date: `${yr}-${pad(mo)}-01` };
+}
+
+function parseBudget(text, strict) {
+  const t = text.toLowerCase().replace(/,/g, "");
+  if (/not sure|pata nahi|pta nahi|no idea|decide nahi|معلوم نہیں/.test(t)) return { label: "Not sure", lakh: null };
+  const cur = /€|eur|euro/.test(t) ? "EUR" : /£|gbp|pound/.test(t) ? "GBP" : "PKR";
+  let m = t.match(/(\d+(?:\.\d+)?)\s*(?:-|–|to|se)\s*(\d+(?:\.\d+)?)\s*(lakh|lac|lacs|lakhs|k|thousand|million|mn|m|crore|cr|hazar|hazaar)?/);
+  let n, u;
+  if (m) { n = (parseFloat(m[1]) + parseFloat(m[2])) / 2; u = m[3] || ""; }
+  else { m = t.match(/(\d+(?:\.\d+)?)\s*(lakh|lac|lacs|lakhs|l\b|k\b|thousand|million|mn|m\b|crore|cr|hazar|hazaar)?/); if (!m) return strict || isQuestion(text) || text.length > 40 ? null : { label: text.trim(), lakh: null }; n = parseFloat(m[1]); u = m[2] || ""; }
+  let val = n;
+  if (/^(lakh|lac|lacs|lakhs|l)$/.test(u)) val = n * 1e5;
+  else if (/^(k|thousand|hazar|hazaar)$/.test(u)) val = n * 1e3;
+  else if (/^(million|mn|m)$/.test(u)) val = n * 1e6;
+  else if (/^(crore|cr)$/.test(u)) val = n * 1e7;
+  else if (cur === "PKR" && n <= 500) val = n * 1e5;   // "25" → assume lakh
+  const rate = cur === "EUR" ? C.fx.EUR : cur === "GBP" ? C.fx.GBP : 1;
+  const lakh = Math.round(val * rate / 1e5);
+  return { label: cur === "PKR" ? `~${lakh} lakh PKR` : `${cur} ${Math.round(val).toLocaleString()} (~${lakh} lakh PKR)`, lakh };
+}
+
+function parseDecider(text) {
+  const t = text.toLowerCase();
+  if (/both|dono|together|mil ?kar|دونوں/.test(t)) return "Both";
+  if (/parent|father|mother|abbu|\babu\b|ammi|papa|\bmama\b|walid|family|guardian|والد|والدہ|والدین|ابو|امی/.test(t)) return "Parent";
+  if (/\b(me|myself|i|student|self|main|mai|khud)\b|خود|میں/.test(t)) return "Student";
+  return null;
+}
+function parseSession(text) {
+  const t = text.toLowerCase();
+  if (/discovery|free|\b15\b|phone|whatsapp|\bcall\b|کال/.test(t)) return "discovery";
+  if (/online|zoom|google meet|\bmeet\b|video|آن لائن/.test(t)) return "online";
+  if (/office|in.?person|visit|aa ?kar|physical|دفتر/.test(t)) return "office";
+  return null;
+}
+const WEEKDAY_RX = [/\bsun(day)?\b|itwar|اتوار/, /\bmon(day)?\b|\bpeer\b|\bpir\b|پیر/, /\btue(s|sday)?\b|mangal|منگل/, /\bwed(nesday)?\b|budh|بدھ/, /\bthu(r|rs|rsday)?\b|jumerat|جمعرات/, /\bfri(day)?\b|\bjum(m)?a\b|جمعہ/, /\bsat(urday)?\b|hafta|ہفتہ/];
+function parseDay(text, days) {
+  const t = text.toLowerCase(), T = todayYmd();
+  let target = null;
+  if (/today|\baaj\b|آج/.test(t)) target = T;
+  else if (/day after|parson|پرسوں/.test(t)) target = addDays(T, 2);
+  else if (/tomorrow|\bkal\b|کل/.test(t)) target = addDays(T, 1);
+  else { for (let i = 0; i < 7; i++) if (WEEKDAY_RX[i].test(t)) { target = days.find(d => dow(d.date) === i)?.date; break; } }
+  if (!target) { const m = t.match(/\b(\d{1,2})\b/); if (m) target = days.find(d => +d.date.slice(8) === +m[1])?.date; }
+  return target && days.some(d => d.date === target) ? target : null;
+}
+function parseTime(text, slots) {
+  const t = text.toLowerCase();
+  const m = t.match(/(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm|baje|bje)?/);
+  if (!m) return null;
+  let h = +m[1]; const mi = m[2] ? +m[2] : 0; const ap = m[3];
+  if (ap === "pm" && h < 12) h += 12;
+  if (ap === "am" && h === 12) h = 0;
+  if ((!ap || /baje|bje/.test(ap)) && h >= 1 && h <= 7) h += 12;
+  const v = `${pad(h)}:${pad(mi)}`;
+  return slots.includes(v) ? v : null;
+}
+const YES_RX = /^(yes|yeah|yep|ok|okay|confirm|haan|han|ji|jee|theek|thik|done|sure|book|جی|ہاں|ٹھیک)/i;
+const NO_RX = /\b(no|change|nahi|nahin|badal|another|other)\b|تبدیل|نہیں/i;
+
+/* ============================== INTENTS ============================== */
+function detectIntent(text) {
+  const t = text.toLowerCase().trim();
+  if (/reschedul|cancel|postpone|change (my )?(booking|appointment|time)|booking (change|cancel)|\bgp-?\s?\d{3,}|منسوخ/.test(t)) return { type: "manage" };
+  if (/baad (mein|me|main)|\blater\b|not now|abhi nahi|soch(ta|ti|kar| ke)|think about it|let me think|phir kabhi|بعد میں|سوچ/.test(t)) return { type: "later" };
+  if (/just (want )?info|only (want )?info|sirf info|sirf maloomat|bas maloomat|information chahiye|just asking|just checking/.test(t)) return { type: "info" };
+  for (const f of C.faqs) if (new RegExp(f.keys, "i").test(t)) return { type: "faq", faq: f };
+  if (/counsel+or (se|to)|talk to|speak to|human|real person|insaan|call me|contact|aap ka number|your number|whatsapp number/.test(t)) return { type: "human" };
+  if (/^(hi|hey|hello|salam|salaam|aoa|assalam|asalam|as-salam|السلام)/.test(t) && t.split(/\s+/).length <= 4) return { type: "hello" };
+  if (/^(thanks|thank you|thx|shukriya|shukria|jazak|شکریہ)/.test(t)) return { type: "thanks" };
+  if (/\b(book|appointment|consultation|slot|meeting|milna)\b/.test(t)) return { type: "book" };
+  return null;
+}
+
+/* ============================== AI (optional) ============================== */
+async function aiReply(userText, lang, question, history) {
+  const ai = C.ai;
+  if (!ai.enabled) return null;
+  const hasClaude = typeof window.claude?.complete === "function";
+  if (!hasClaude && !ai.endpoint) return null;
+  const system = fill(ai.systemPrompt);
+  const langName = lang === "ur" ? "Urdu (Urdu script)" : lang === "ru" ? "Roman Urdu (Urdu written in English letters)" : "English";
+  const knowledge = C.faqs.map(f => `- ${f.q} ${fill(f.a.en)}`).join("\n");
+  const convo = history.slice(-8).filter(m => m.kind === "text").map(m => `${m.from === "user" ? "User" : "Assistant"}: ${m.text}`).join("\n");
+  const prompt = `${system}
+
+BUSINESS: ${C.brand.name}, ${C.brand.address}. Hours: ${C.hours.label}. Sessions: ${C.sessionTypes.map(s => s.name).join("; ")}.
+KNOWLEDGE (general — figures change):
+${knowledge}
+
+RECENT CONVERSATION:
+${convo}
+
+The assistant is currently waiting for the user to answer: "${question}"
+The user just wrote: "${userText}"
+
+Write ONLY the assistant's next reply, in ${langName}. 1–3 short lines. If it's a relevant question, answer briefly and generally; if off-topic, steer back politely. End by gently re-asking what we're waiting for.`;
+  try {
+    const call = hasClaude
+      ? window.claude.complete(prompt)
+      : fetch(ai.endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ system, prompt }) }).then(r => r.json()).then(j => j.reply || j.text || j.content);
+    const out = await Promise.race([call, sleep(ai.timeoutMs).then(() => null)]);
+    if (typeof out !== "string") return null;
+    let r = out.trim().replace(/^["']+|["']+$/g, "");
+    if (!r) return null;
+    if (r.length > 600) r = r.slice(0, 600) + "…";
+    // compliance guard: drop anything that sounds like a promise
+    if (/(guarantee[ds]?|assured?)\s+(a\s+)?(visa|admission|approval|success)|\b\d{2,3}\s*%\s*(success|approval|visa)/i.test(r) && !/\b(no|not|cannot|can't|nahi|koi bhi)\b/i.test(r)) return null;
+    return r;
+  } catch (e) { return null; }
+}
+
+/* ============================== ICS / WHATSAPP ============================== */
+const icsEsc = s => String(s).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+function downloadICS(a) {
+  const s = sessionOf(a.session);
+  const start = slotEpoch(a.date, a.time), end = start + s.minutes * 60000;
+  const f = ms => new Date(ms).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const loc = a.session === "office" ? C.brand.address : a.session === "online" ? "Online — link will be shared on WhatsApp" : "Phone / WhatsApp call";
+  const desc = `Booking ID: ${a.id}\nCountry: ${countryLabel(a)}\nPlease have ready: ${C.documents.join("; ")}\nQuestions? ${C.brand.phoneDisplay}`;
+  const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", `PRODID:-//${C.brand.short}//Booking//EN`, "CALSCALE:GREGORIAN", "METHOD:PUBLISH", "BEGIN:VEVENT",
+    `UID:${a.id}-${start}@${C.brand.short.replace(/\s+/g, "").toLowerCase()}`, `DTSTAMP:${f(Date.now())}`, `DTSTART:${f(start)}`, `DTEND:${f(end)}`,
+    `SUMMARY:${icsEsc(s.name + " — " + C.brand.name)}`, `DESCRIPTION:${icsEsc(desc)}`, `LOCATION:${icsEsc(loc)}`,
+    "BEGIN:VALARM", "TRIGGER:-PT1H", "ACTION:DISPLAY", "DESCRIPTION:Consultation reminder", "END:VALARM", "END:VEVENT", "END:VCALENDAR"].join("\r\n");
+  downloadFile(`${a.id}.ics`, ics, "text/calendar");
+}
+const waLink = a => {
+  const s = sessionOf(a.session);
+  const text = `Assalam-o-Alaikum! My consultation is booked ✅\nBooking ID: ${a.id}\nName: ${a.name}\nSession: ${s.name}\nDate: ${fmtDay(a.date)} at ${fmtTime(a.time)} (PKT)\nCountry: ${countryLabel(a)}`;
+  return `https://wa.me/${C.brand.whatsapp}?text=${encodeURIComponent(text)}`;
+};
+
+/* ============================== ICONS & FLAGS ============================== */
+const ICONS = {
+  check: <path d="M20 6 9 17l-5-5" />,
+  x: <path d="M18 6 6 18M6 6l12 12" />,
+  send: <><path d="M22 2 11 13" /><path d="M22 2 15 22l-4-9-9-4 20-7z" /></>,
+  phone: <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z" />,
+  clock: <><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></>,
+  calendar: <><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></>,
+  globe: <><circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></>,
+  chat: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />,
+  shield: <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="m9 12 2 2 4-4" /></>,
+  users: <><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></>,
+  download: <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />,
+  refresh: <><path d="M23 4v6h-6M1 20v-6h6" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" /></>,
+  arrowRight: <path d="M5 12h14M12 5l7 7-7 7" />,
+  arrowLeft: <path d="M19 12H5M12 19l-7-7 7-7" />,
+  chevL: <path d="m15 18-6-6 6-6" />,
+  chevR: <path d="m9 18 6-6-6-6" />,
+  chevD: <path d="m6 9 6 6 6-6" />,
+  cap: <><path d="M22 10 12 5 2 10l10 5 10-5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></>,
+  flame: <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z" />,
+  list: <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />,
+  search: <><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></>,
+  pin: <><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></>,
+  lock: <><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></>,
+  wa: <><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21" /><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1" /></>,
+  star: <path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />,
+  doc: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" /></>,
+};
+const Icon = ({ name, size = 18, className = "", stroke = 2 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">{ICONS[name]}</svg>
+);
+
+function Flag({ country, w = 44, className = "" }) {
+  const f = country?.flag, h = Math.round(w * 2 / 3);
+  const cls = "rounded-md overflow-hidden ring-1 ring-black/10 shadow-sm shrink-0 " + className;
+  if (!f) return <div style={{ width: w, height: h }} className={cls + " grid place-items-center bg-navy text-gold"}><Icon name="globe" size={h * 0.7} /></div>;
+  if (f.type === "uk") {
+    const id = "ukc" + w;
+    return (
+      <svg width={w} height={h} viewBox="0 0 60 40" preserveAspectRatio="xMidYMid slice" className={cls}>
+        <clipPath id={id}><path d="M30,20 h30 v20 z v20 h-30 z h-30 v-20 z v-20 h30 z" transform="translate(0,0)" /></clipPath>
+        <rect width="60" height="40" fill="#012169" />
+        <path d="M0,0 L60,40 M60,0 L0,40" stroke="#fff" strokeWidth="8" />
+        <path d="M0,0 L60,40 M60,0 L0,40" clipPath={`url(#${id})`} stroke="#C8102E" strokeWidth="4" />
+        <path d="M30,0 v40 M0,20 h60" stroke="#fff" strokeWidth="12" />
+        <path d="M30,0 v40 M0,20 h60" stroke="#C8102E" strokeWidth="7" />
+      </svg>
+    );
+  }
+  return (
+    <div style={{ width: w, height: h }} className={cls + " flex " + (f.type === "h" ? "flex-col" : "flex-row")}>
+      {f.colors.map((c, i) => <div key={i} style={{ background: c }} className="flex-1" />)}
+    </div>
+  );
+}
+
+/* ============================== SMALL UI ============================== */
+const STATUS = ["New", "Confirmed", "Completed", "No-show", "Cancelled"];
+const STATUS_STYLE = {
+  New: "bg-blue-50 text-blue-700 ring-blue-200",
+  Confirmed: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  Completed: "bg-slate-100 text-slate-700 ring-slate-200",
+  "No-show": "bg-amber-50 text-amber-800 ring-amber-200",
+  Cancelled: "bg-rose-50 text-rose-700 ring-rose-200",
+};
+const LEAD_STYLE = {
+  Hot: "bg-gradient-to-r from-orange-500 to-rose-500 text-white",
+  Warm: "bg-amber-100 text-amber-900 ring-1 ring-amber-300",
+  Cold: "bg-sky-50 text-sky-800 ring-1 ring-sky-200",
+};
+const LeadBadge = ({ level }) => (
+  <span className={"inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold " + LEAD_STYLE[level]}>
+    {level === "Hot" ? <Icon name="flame" size={12} /> : level === "Warm" ? "◐" : "❄"} {level}
+  </span>
+);
+const StatusPill = ({ s }) => <span className={"inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 " + STATUS_STYLE[s]}>{s}</span>;
+const Logo = ({ light }) => (
+  <div className="flex items-center gap-2.5">
+    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-gold to-gold-deep grid place-items-center text-navy font-extrabold shadow-md">{C.brand.initials}</div>
+    <div className="leading-tight">
+      <div className={"font-display font-bold text-[17px] " + (light ? "text-white" : "text-navy")}>{C.brand.short}</div>
+      <div className={"text-[11px] tracking-wide uppercase " + (light ? "text-white/60" : "text-slate-500")}>Consultants · {C.brand.city}</div>
+    </div>
+  </div>
+);
+
+/* ============================== CHAT WIDGET ============================== */
+const BOOKING_STEPS = ["country", "otherCountry", "name", "education", "grades", "english", "englishScore", "intake", "budget", "decider", "phone", "session", "day", "time", "confirm"];
+const freshState = () => ({ step: "idle", lang: "en", lead: {}, started: false, queue: Promise.resolve(), manage: {}, rescheduleId: null, day: null, presetSession: null, pausedStep: null, pendingTest: null, userClosed: false });
+
+function ChatWidget({ appts, addAppt, updateAppt, apiRef, hidden }) {
+  const [open, setOpen] = useState(false);
+  const [msgs, setMsgs] = useState([]);
+  const [chips, setChips] = useState([]);
+  const [typing, setTyping] = useState(false);
+  const [input, setInput] = useState("");
+  const [unread, setUnread] = useState(0);
+  const [peek, setPeek] = useState(false);
+  const S = useRef(freshState());
+  const gen = useRef(0);
+  const apptsRef = useRef(appts); apptsRef.current = appts;
+  const msgsRef = useRef(msgs); msgsRef.current = msgs;
+  const openRef = useRef(open); openRef.current = open;
+  const hiddenRef = useRef(hidden); hiddenRef.current = hidden;
+  const endRef = useRef(null), inputRef = useRef(null);
+
+  const T = (k, v) => tr(k, S.current.lang, v);
+  const first = () => (S.current.lead.name || "").split(" ")[0];
+
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [msgs, typing, chips, open]);
+
+  const push = m => {
+    setMsgs(p => [...p, { id: uid(), time: Date.now(), ...m }]);
+    if (m.from === "bot" && !openRef.current) setUnread(u => u + 1);
+  };
+  const enqueue = fn => { const g = gen.current; S.current.queue = S.current.queue.then(() => g === gen.current && fn(g)).catch(e => console.error(e)); return S.current.queue; };
+
+  // bot speaks: items one by one with typing indicator, then shows quick replies
+  const say = (items, nextChips) => enqueue(async g => {
+    setChips([]);
+    for (const it of [].concat(items).filter(Boolean)) {
+      const m = typeof it === "string" ? { kind: "text", text: it } : it;
+      setTyping(true);
+      await sleep(m.kind === "text" ? Math.min(1300, 420 + m.text.length * 11) : 650);
+      if (g !== gen.current) return;
+      setTyping(false);
+      push({ from: "bot", ...m });
+      await sleep(90);
+    }
+    if (nextChips && g === gen.current) setChips(nextChips);
+  });
+
+  const ch = (k, value) => ({ label: T(k), value });
+  const doneChips = () => [ch("c_question", "act:question"), ch("c_new", "act:new"), ch("c_manage", "act:manage")];
+  const faqChips = () => C.faqs.filter(f => f.chip).slice(0, 6).map(f => ({ label: f.chip, value: "faq:" + f.id }));
+  const countryChips = () => [...C.countries.map(c => ({ label: c.name, value: "country:" + c.name, flag: c })), ch("c_other", "country:Other"), ch("c_question", "act:question"), ch("c_manage", "act:manage")];
+
+  // what to ask at each step
+  const stepUI = step => {
+    const s = S.current, L = s.lead;
+    switch (step) {
+      case "country": return { q: T("askCountry"), chips: countryChips() };
+      case "otherCountry": return { q: T("otherCountry"), chips: C.otherCountrySuggestions.map(o => ({ label: o, value: "other:" + o })) };
+      case "name": return { q: T("askName"), chips: [] };
+      case "education": return { q: T("askEducation"), chips: C.educationLevels.map(e => ({ label: e, value: "edu:" + e })) };
+      case "grades": return { q: T("askGrades"), chips: [] };
+      case "english": return { q: T("askEnglish"), chips: [{ label: "IELTS", value: "eng:IELTS" }, { label: "PTE", value: "eng:PTE" }, { label: "Duolingo", value: "eng:Duolingo" }, ch("c_notyet", "eng:none")] };
+      case "englishScore": return { q: T("askScore", { test: s.pendingTest }), chips: [ch("c_dontRemember", "act:skipScore")] };
+      case "intake": return { q: T("askIntake"), chips: [...upcomingIntakes(3).map(i => ({ label: i.label, value: "intake:" + i.date })), ch("c_notsure", "intake:none")] };
+      case "budget": return { q: T("askBudget"), chips: C.budgetRanges.map((b, i) => ({ label: b.label, value: "budget:" + i })) };
+      case "decider": return { q: T("askDecider"), chips: [ch("c_student", "decider:Student"), ch("c_parent", "decider:Parent"), ch("c_both", "decider:Both")] };
+      case "phone": return { q: T("askPhone"), chips: [] };
+      case "session": return { q: T("askSession"), chips: C.sessionTypes.map(x => ({ label: `${x.icon} ${x.name}`, value: "session:" + x.id })) };
+      case "day": {
+        const days = availableDays(apptsRef.current, s.rescheduleId);
+        if (!days.length) return { q: T("noDays"), chips: doneChips(), dead: true };
+        return { q: T("askDay"), chips: days.map(d => ({ label: `${dayLabel(d.date) === fmtDay(d.date) ? fmtDay(d.date) : dayLabel(d.date) + " · " + fmtDay(d.date).split(", ")[1]} · ${d.slots.length} free`, value: "day:" + d.date })) };
+      }
+      case "time": {
+        const slots = freeSlots(apptsRef.current, s.day, s.rescheduleId);
+        return { q: T("askTime", { day: dayLabel(s.day) }), chips: [...slots.map(t => ({ label: fmtTime(t), value: "time:" + t, small: true })), ch("c_otherDay", "act:otherDay")] };
+      }
+      case "confirm": return { q: [T("summary"), { kind: "summary", data: { ...L } }], chips: [ch("c_confirm", "act:confirm"), ch("c_change", "act:change")] };
+      case "manageId": return { q: T("manageId"), chips: [] };
+      case "managePhone": return { q: T("managePhone"), chips: [] };
+      default: return { q: T("anythingElse"), chips: doneChips() };
+    }
+  };
+
+  const ask = (step, pre = []) => {
+    S.current.step = step;
+    const ui = stepUI(step);
+    if (ui.dead) S.current.step = "done";
+    if (step === "time" && ui.chips.length <= 1) { S.current.step = "day"; return ask("day", [...[].concat(pre), T("slotTaken")]); }
+    return say([...[].concat(pre), ...[].concat(ui.q)], ui.chips);
+  };
+
+  const reprompt = (pre = []) => {
+    const st = S.current.step;
+    if (st === "idle" || st === "done") return say([...[].concat(pre), T("anythingElse")], doneChips());
+    if (st === "country") return say([...[].concat(pre), T("askCountryAfterFaq")], countryChips());
+    const ui = stepUI(st);
+    const q = typeof ui.q === "string" ? `${T("back")} ${ui.q}` : ui.q;
+    return say([...[].concat(pre), ...[].concat(q)], ui.chips);
+  };
+
+  /* ---------- accepting an answer for the current step ---------- */
+  const accept = (step, val) => {
+    const s = S.current, L = s.lead;
+    switch (step) {
+      case "country":
+        if (val.country === "Other") { if (val.other) return accept("otherCountry", val.other); return ask("otherCountry"); }
+        L.country = val.country; L.countryOther = null;
+        return ask(L.name ? "education" : "name", [T("countryAck", { country: val.country })]);
+      case "otherCountry":
+        L.country = "Other"; L.countryOther = titleCase(val);
+        return ask("name", [T("otherAck", { country: L.countryOther })]);
+      case "name":
+        L.name = val; return ask("education", [T("niceMeet", { first: val.split(" ")[0] })]);
+      case "education":
+        L.education = val; return ask("grades");
+      case "grades":
+        L.grades = val; return ask("english", [T("gotIt")]);
+      case "english":
+        if (val.none) { L.english = { label: "Not yet", test: "None", score: null, done: false }; return ask("intake", [T("englishNone")]); }
+        if (val.score == null) { s.pendingTest = val.test; return ask("englishScore"); }
+        L.english = { label: `${val.test} ${val.score}`, test: val.test, score: val.score, done: true };
+        return ask("intake", [T("niceScore")]);
+      case "englishScore":
+        L.english = { label: val === "—" ? `${s.pendingTest} (score n/a)` : `${s.pendingTest} ${val}`, test: s.pendingTest, score: val === "—" ? null : val, done: true };
+        return ask("intake", [T("niceScore")]);
+      case "intake": L.intake = val; return ask("budget");
+      case "budget": L.budget = val; return ask("decider");
+      case "decider": L.decider = val; return ask("phone");
+      case "phone":
+        L.phone = val;
+        if (s.presetSession) { L.session = s.presetSession; return ask("day", [T("thanksPhone")]); }
+        return ask("session");
+      case "session": L.session = val; return ask("day");
+      case "day": s.day = val; return ask("time");
+      case "time": L.date = s.day; L.time = val; return ask("confirm");
+      case "confirm": return val === "yes" ? finalize() : ask("day");
+      case "manageId": s.manage = { id: val }; return ask("managePhone");
+      case "managePhone": return findBooking(val);
+      default: return reprompt();
+    }
+  };
+
+  const finalize = () => {
+    const s = S.current, L = s.lead, appts = apptsRef.current;
+    if (isBooked(appts, L.date, L.time, s.rescheduleId) || slotEpoch(L.date, L.time) <= Date.now()) return ask("time", [T("slotTaken")]);
+    if (s.rescheduleId) {
+      const id = s.rescheduleId;
+      const old = appts.find(a => a.id === id);
+      updateAppt(id, { date: L.date, time: L.time, status: old?.status === "Cancelled" ? "New" : old?.status === "Completed" || old?.status === "No-show" ? "New" : old?.status || "New", rescheduledAt: Date.now() });
+      s.rescheduleId = null; s.step = "done";
+      return say([T("rescheduled", { id }), { kind: "success", data: { ...old, date: L.date, time: L.time } }], doneChips());
+    }
+    const max = appts.reduce((m, a) => Math.max(m, parseInt(String(a.id).replace(/\D/g, ""), 10) || 0), C.booking.startId - 1);
+    const appt = {
+      id: C.booking.idPrefix + (max + 1), createdAt: Date.now(), status: "New", lang: s.lang, source: "Chatbot",
+      name: L.name, phone: L.phone, country: L.country, countryOther: L.countryOther || null, education: L.education,
+      grades: L.grades?.label, gradesKind: L.grades?.kind, gradesValue: L.grades?.value, gradesScale: L.grades?.scale,
+      english: L.english?.label, englishTest: L.english?.test, englishScore: L.english?.score, englishDone: !!L.english?.done,
+      budget: L.budget?.label, budgetLakh: L.budget?.lakh ?? null, intake: L.intake?.label, intakeDate: L.intake?.date || null,
+      decider: L.decider, session: L.session, date: L.date, time: L.time,
+    };
+    addAppt(appt);
+    s.step = "done"; s.presetSession = null;
+    return say([T("booked", { first: first() }), { kind: "success", data: appt }], doneChips());
+  };
+
+  const findBooking = phone => {
+    const s = S.current;
+    const b = apptsRef.current.find(a => a.id.toUpperCase() === s.manage.id && a.phone === phone);
+    if (!b) { s.step = "done"; return say(T("manageNotFound"), [ch("c_tryAgain", "act:manage"), ch("c_new", "act:new")]); }
+    s.manage.bookingId = b.id; s.step = "done";
+    if (b.status === "Cancelled") return say([{ kind: "booking", data: b }, T("alreadyCancelled")], [ch("c_new", "act:new"), ch("c_question", "act:question")]);
+    return say([T("manageFound"), { kind: "booking", data: b }], [ch("c_reschedule", "act:reschedule"), ch("c_cancelBooking", "act:cancelBooking"), ch("c_keep", "act:keep")]);
+  };
+
+  /* ---------- parse free text for the current step ---------- */
+  const parseStep = (step, text, strict) => {
+    const q = isQuestion(text);
+    switch (step) {
+      case "country": return q ? null : matchCountry(text);
+      case "otherCountry": { if (q) return null; const m = matchCountry(text); if (m) return m.other || (m.country !== "Other" ? { redirect: m.country } : null); return !strict && text.length <= 30 && /^[a-z\s.'-]+$/i.test(text) ? text.trim() : null; }
+      case "name": return q ? null : extractName(text);
+      case "education": return q ? null : parseEducation(text, strict);
+      case "grades": return q ? null : parseGrades(text);
+      case "english": return q ? null : parseEnglish(text);
+      case "englishScore": { if (/don'?t remember|yaad nahi|not sure|یاد نہیں/i.test(text)) return "—"; const m = text.match(/(\d+(?:\.\d+)?)/); return m ? m[1] : null; }
+      case "intake": return q ? null : parseIntake(text);
+      case "budget": return q ? null : parseBudget(text, strict);
+      case "decider": return q ? null : parseDecider(text);
+      case "phone": return extractPhone(text);
+      case "session": return q ? null : parseSession(text);
+      case "day": return parseDay(text, availableDays(apptsRef.current, S.current.rescheduleId));
+      case "time": return parseTime(text, freeSlots(apptsRef.current, S.current.day, S.current.rescheduleId));
+      case "confirm": return q ? null : YES_RX.test(text.trim()) ? "yes" : NO_RX.test(text) ? "no" : null;
+      case "manageId": { const m = text.match(/(?:[a-z]{1,4})?\s*-?\s*(\d{3,6})/i); return m ? (C.booking.idPrefix + m[1]).toUpperCase() : null; }
+      case "managePhone": return extractPhone(text);
+      default: return null;
+    }
+  };
+
+  const handleIntent = intent => {
+    const s = S.current;
+    switch (intent.type) {
+      case "faq": return reprompt([faqAnswer(intent.faq, s.lang)]);
+      case "later": s.pausedStep = s.step; return say(T("later"), [ch("c_bookFree", "act:bookFree"), ch("c_maybeLater", "act:maybeLater")]);
+      case "info": s.pausedStep = s.step; return say(T("infoOnly"), [ch("c_bookFree", "act:bookFree"), ...faqChips().slice(0, 3)]);
+      case "manage": { const m = parseStep("manageId", "x" + (/(\d{3,6})/.exec(intentText.current) || [""])[0]); if (/\d{3,}/.test(intentText.current) && m) { s.manage = { id: m }; return ask("managePhone"); } s.manage = {}; return ask("manageId"); }
+      case "human": return reprompt([T("human")]);
+      case "hello": return reprompt([T("hello")]);
+      case "thanks": return reprompt([T("thanks")]);
+      case "book": if (s.step === "idle" || s.step === "done") { s.lead = {}; return ask("country", [T("restart")]); } return reprompt();
+      default: return reprompt();
+    }
+  };
+  const intentText = useRef("");
+
+  const fallback = (step, text) => {
+    if (step === "phone" && /\d{6,}/.test(text.replace(/\D/g, ""))) return say(T("badPhone"));
+    if (step === "managePhone" && /\d{6,}/.test(text)) return say(T("badPhone"));
+    if (step === "grades" && !isQuestion(text)) return say(T("badGrades"));
+    if (step === "name" && !isQuestion(text)) return say(T("badName"));
+    if (step === "manageId") return say(T("badId"));
+    if (step === "day" || step === "time") return ask(step, [T("notAvailable")]);
+    return reprompt([T("steer")]);
+  };
+
+  const processText = text => {
+    const s = S.current, step = s.step;
+    const strict = parseStep(step, text, true);
+    if (strict) { if (strict.redirect) return accept("country", { country: strict.redirect }); return accept(step, strict); }
+    if (step === "phone" && !isQuestion(text) && /\d{6,}/.test(text.replace(/\D/g, ""))) return say(T("badPhone"));
+    intentText.current = text;
+    const intent = detectIntent(text);
+    if (intent) return handleIntent(intent);
+    const loose = parseStep(step, text, false);
+    if (loose) { if (loose.redirect) return accept("country", { country: loose.redirect }); return accept(step, loose); }
+    // AI for anything unrecognised (if available), otherwise rule-based steer-back
+    const ui = stepUI(step);
+    const question = typeof ui.q === "string" ? ui.q : T("anythingElse");
+    enqueue(async g => {
+      setTyping(true);
+      const r = await aiReply(text, s.lang, question, msgsRef.current);
+      if (g !== gen.current) return;
+      setTyping(false);
+      if (r) say(r, ui.chips); else fallback(step, text);
+    });
+  };
+
+  /* ---------- quick-reply actions ---------- */
+  const act = value => {
+    const s = S.current;
+    const i = value.indexOf(":"), k = value.slice(0, i), p = value.slice(i + 1);
+    switch (k) {
+      case "country": return accept("country", { country: p });
+      case "other": return accept("otherCountry", p);
+      case "edu": return accept("education", p);
+      case "eng": return accept("english", p === "none" ? { none: true } : { test: p, score: null });
+      case "intake": return accept("intake", p === "none" ? { label: "Not decided", date: null } : { label: `${MONTHS[+p.slice(5, 7) - 1]} ${p.slice(0, 4)}`, date: p });
+      case "budget": { const b = C.budgetRanges[+p]; return accept("budget", { label: b.label, lakh: b.lakh }); }
+      case "decider": return accept("decider", p);
+      case "session": return accept("session", p);
+      case "day": return accept("day", p);
+      case "time": return accept("time", p);
+      case "faq": { const f = C.faqs.find(x => x.id === p); return f ? handleIntent({ type: "faq", faq: f }) : reprompt(); }
+      case "act":
+        switch (p) {
+          case "question": return say(T("askQuestion"), faqChips());
+          case "new": s.lead = {}; s.rescheduleId = null; s.presetSession = null; return ask("country", [T("restart")]);
+          case "manage": s.manage = {}; return ask("manageId");
+          case "skipScore": return accept("englishScore", "—");
+          case "otherDay": case "change": return ask("day");
+          case "confirm": return accept("confirm", "yes");
+          case "bookFree": case "bookNow": {
+            if (p === "bookFree") s.presetSession = "discovery";
+            const ps = s.pausedStep; s.pausedStep = null;
+            if (ps && BOOKING_STEPS.includes(ps) && ps !== "country") { s.step = ps; if (ps === "session" && s.presetSession) return accept("session", s.presetSession); return reprompt(); }
+            s.lead = {}; return ask("country");
+          }
+          case "maybeLater": return say(T("laterOk"), [ch("c_bookNow", "act:bookNow"), ch("c_question", "act:question")]);
+          case "reschedule": {
+            const b = apptsRef.current.find(a => a.id === s.manage.bookingId);
+            if (!b) return reprompt();
+            s.rescheduleId = b.id;
+            s.lead = { name: b.name, phone: b.phone, country: b.country, countryOther: b.countryOther, session: b.session };
+            return ask("day", [T("rescheduleStart")]);
+          }
+          case "cancelBooking": updateAppt(s.manage.bookingId, { status: "Cancelled" }); s.step = "done"; return say(T("cancelled", { id: s.manage.bookingId }), [ch("c_new", "act:new"), ch("c_question", "act:question")]);
+          case "keep": s.step = "done"; return say(T("kept"), doneChips());
+          default: return reprompt();
+        }
+      default: return reprompt();
+    }
+  };
+
+  /* ---------- user input ---------- */
+  const send = raw => {
+    const text = (raw ?? input).trim();
+    if (!text) return;
+    setInput("");
+    if (!S.current.started) startConversation(true);
+    push({ from: "user", kind: "text", text });
+    setChips([]);
+    S.current.lang = detectLang(text, S.current.lang);
+    processText(text);
+  };
+  const onChip = c => { push({ from: "user", kind: "text", text: c.label }); setChips([]); act(c.value); };
+
+  const startConversation = silent => {
+    if (S.current.started) return;
+    S.current.started = true;
+    S.current.step = "country";
+    if (silent) return;
+    say([T("greet"), T("greet2")]);
+    ask("country");
+  };
+  const openChat = () => {
+    setOpen(true); setUnread(0); setPeek(false);
+    startConversation();
+    if (window.innerWidth >= 640) setTimeout(() => inputRef.current?.focus(), 350);
+  };
+  const closeChat = () => { setOpen(false); S.current.userClosed = true; };
+  const restart = () => {
+    gen.current++;
+    S.current = freshState();
+    setMsgs([]); setChips([]); setTyping(false);
+    startConversation();
+  };
+
+  apiRef.current = {
+    open: openChat,
+    country: name => {
+      const s = S.current;
+      const fresh = !s.started;
+      openChat();
+      if (fresh || s.step === "country" || s.step === "done" || s.step === "idle") {
+        if (s.step !== "country") { s.lead = {}; s.rescheduleId = null; }
+        enqueue(async () => push({ from: "user", kind: "text", text: name === "Other" ? T("c_other") : name }));
+        accept("country", { country: name });
+      } else if (BOOKING_STEPS.includes(s.step) && name !== "Other") {
+        s.lead.country = name; s.lead.countryOther = null;
+        reprompt([T("countryNoted", { country: name })]);
+      }
+    },
+  };
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (openRef.current || S.current.userClosed || hiddenRef.current) return;
+      if (window.innerWidth < 640 && !C.chat.autoOpenOnMobile) { startConversation(); setPeek(true); }
+      else openChat();
+    }, C.chat.autoOpenDelayMs);
+    return () => clearTimeout(t);
+  }, []);
+
+  const lastBot = [...msgs].reverse().find(m => m.from === "bot" && m.kind === "text");
+
+  return (
+    <div style={{ display: hidden ? "none" : undefined }}>
+      {/* Launcher */}
+      {!open && (
+        <div className="fixed bottom-5 right-4 sm:right-6 z-50 flex flex-col items-end gap-3">
+          {peek && lastBot && (
+            <button onClick={openChat} className="anim-pop max-w-[270px] text-left rounded-2xl rounded-br-sm bg-white shadow-2xl ring-1 ring-black/5 px-4 py-3 text-sm text-ink">
+              <div className="text-[11px] font-semibold text-gold-deep mb-0.5">{C.botName}</div>
+              <div className={hasUrdu(lastBot.text) ? "urdu text-right" : ""} dir={hasUrdu(lastBot.text) ? "rtl" : "ltr"}>{lastBot.text}</div>
+            </button>
+          )}
+          <button onClick={openChat} aria-label="Open chat" className="relative h-16 w-16 rounded-full bg-gradient-to-br from-gold to-gold-deep text-navy shadow-2xl grid place-items-center pulse-ring hover:scale-105 transition">
+            <Icon name="chat" size={28} stroke={2.2} />
+            {unread > 0 && <span className="absolute -top-1 -right-1 min-w-[22px] h-[22px] px-1 rounded-full bg-rose-500 text-white text-xs font-bold grid place-items-center ring-2 ring-white">{unread}</span>}
+          </button>
+        </div>
+      )}
+
+      {/* Panel */}
+      {open && (
+        <div className="fixed z-50 inset-0 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-[400px] sm:h-[min(660px,calc(100vh-48px))] h-[100dvh] flex flex-col bg-white sm:rounded-3xl shadow-[0_30px_80px_-20px_rgba(10,26,58,.55)] overflow-hidden anim-pop ring-1 ring-black/5">
+          <div className="hero-bg text-white px-4 py-3.5 flex items-center gap-3 shrink-0">
+            <div className="relative">
+              <div className="h-11 w-11 rounded-full bg-gradient-to-br from-gold to-gold-deep grid place-items-center text-navy"><Icon name="cap" size={22} /></div>
+              <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-navy" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold leading-tight truncate">{C.botName}</div>
+              <div className="text-xs text-white/70 truncate">{C.brand.name} · Online now</div>
+            </div>
+            <button onClick={restart} title="Start over" className="h-9 w-9 rounded-full hover:bg-white/10 grid place-items-center"><Icon name="refresh" size={17} /></button>
+            <button onClick={closeChat} title="Close" className="h-9 w-9 rounded-full hover:bg-white/10 grid place-items-center"><Icon name="x" size={20} /></button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto chat-bg px-3.5 py-4 space-y-3 scroll-thin">
+            <div className="text-center"><span className="inline-block text-[11px] text-slate-500 bg-white/80 rounded-full px-3 py-1 ring-1 ring-black/5">Today · Replies instantly · English / اردو / Roman Urdu</span></div>
+            {msgs.map(m => <Message key={m.id} m={m} />)}
+            {typing && (
+              <div className="flex items-end gap-2 anim-up">
+                <div className="h-7 w-7 rounded-full bg-navy text-gold grid place-items-center shrink-0"><Icon name="cap" size={14} /></div>
+                <div className="bg-white rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm ring-1 ring-black/5 typing"><span /><span /><span /></div>
+              </div>
+            )}
+            {chips.length > 0 && !typing && (
+              <div className="flex flex-wrap gap-2 pl-9 anim-up">
+                {chips.map((c, i) => (
+                  <button key={i} onClick={() => onChip(c)}
+                    className={"inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-gold bg-white text-navy font-semibold shadow-sm hover:bg-gold hover:text-navy active:scale-95 transition " + (c.small ? "px-3 py-1.5 text-[13px]" : "px-3.5 py-2 text-[13px]") + (hasUrdu(c.label) ? " urdu" : "")}>
+                    {c.flag && <Flag country={c.flag} w={18} className="!rounded-sm" />}{c.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div ref={endRef} />
+          </div>
+
+          <form onSubmit={e => { e.preventDefault(); send(); }} className="shrink-0 border-t border-slate-200 bg-white px-3 pt-2.5 pb-[max(10px,env(safe-area-inset-bottom))]">
+            <div className="flex items-center gap-2">
+              <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)} placeholder="Type your message…" dir="auto"
+                className="flex-1 min-w-0 rounded-full bg-slate-100 px-4 py-3 text-base sm:text-sm outline-none focus:ring-2 focus:ring-gold" />
+              <button type="submit" disabled={!input.trim()} className="h-11 w-11 rounded-full bg-navy text-gold grid place-items-center disabled:opacity-40 hover:bg-navy-2 transition shrink-0" aria-label="Send"><Icon name="send" size={18} /></button>
+            </div>
+            <div className="text-[10.5px] text-center text-slate-400 mt-1.5">Guidance only · No visa or admission guarantees · Counsellors confirm all requirements</div>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Message({ m }) {
+  const bot = m.from === "bot";
+  const ur = m.kind === "text" && hasUrdu(m.text);
+  const time = <div className={"text-[10px] mt-1 text-slate-400 " + (bot ? "" : "text-right")}>{clockTime(m.time)}</div>;
+  if (m.kind === "summary") return <div className="pl-9 anim-up"><SummaryCard l={m.data} />{time}</div>;
+  if (m.kind === "success") return <div className="pl-9 anim-up"><SuccessCard a={m.data} />{time}</div>;
+  if (m.kind === "booking") return <div className="pl-9 anim-up"><BookingCard a={m.data} />{time}</div>;
+  return (
+    <div className={"flex items-end gap-2 anim-up " + (bot ? "" : "justify-end")}>
+      {bot && <div className="h-7 w-7 rounded-full bg-navy text-gold grid place-items-center shrink-0 mb-5"><Icon name="cap" size={14} /></div>}
+      <div className="max-w-[80%]">
+        <div dir={ur ? "rtl" : "ltr"} className={(bot ? "bg-white text-ink rounded-2xl rounded-bl-sm ring-1 ring-black/5 shadow-sm" : "bg-navy text-white rounded-2xl rounded-br-sm shadow") + " px-3.5 py-2.5 text-[14px] leading-relaxed whitespace-pre-wrap break-words " + (ur ? "urdu text-right" : "")}>{m.text}</div>
+        {time}
+      </div>
+    </div>
+  );
+}
+
+const Row = ({ k, v }) => <div className="flex justify-between gap-3 py-1.5 border-b border-dashed border-slate-200 last:border-0"><span className="text-slate-500">{k}</span><span className="font-semibold text-right text-ink">{v}</span></div>;
+
+function SummaryCard({ l }) {
+  const s = sessionOf(l.session);
+  return (
+    <div className="rounded-2xl bg-white ring-1 ring-gold/40 shadow-md overflow-hidden max-w-[300px]" style={{ boxShadow: "0 8px 24px -10px rgba(10,26,58,.25)" }}>
+      <div className="bg-gold-soft px-4 py-2.5 text-navy font-bold text-sm flex items-center gap-2"><Icon name="calendar" size={16} /> Booking summary</div>
+      <div className="px-4 py-2 text-[13px]">
+        <Row k="Name" v={l.name} />
+        <Row k="Country" v={l.country === "Other" ? l.countryOther || "Other" : l.country} />
+        <Row k="Session" v={`${s.icon} ${s.short}${s.fee ? " (Free)" : ""}`} />
+        <Row k="Date" v={fmtDay(l.date)} />
+        <Row k="Time" v={`${fmtTime(l.time)} PKT`} />
+        <Row k="Phone" v={fmtPhone(l.phone)} />
+      </div>
+    </div>
+  );
+}
+
+function SuccessCard({ a }) {
+  const s = sessionOf(a.session);
+  return (
+    <div className="rounded-2xl bg-white ring-1 ring-black/5 overflow-hidden max-w-[310px]" style={{ boxShadow: "0 14px 34px -14px rgba(10,26,58,.4)" }}>
+      <div className="hero-bg text-white px-4 py-4 text-center">
+        <div className="mx-auto h-11 w-11 rounded-full bg-emerald-400 text-navy grid place-items-center mb-2"><Icon name="check" size={24} stroke={3} /></div>
+        <div className="text-xs uppercase tracking-widest text-white/60">Booking confirmed</div>
+        <div className="font-mono text-2xl font-bold gold-text mt-0.5">{a.id}</div>
+      </div>
+      <div className="px-4 py-2 text-[13px]">
+        <Row k="Session" v={`${s.icon} ${s.short}`} />
+        <Row k="When" v={`${fmtDay(a.date)}, ${fmtTime(a.time)}`} />
+        <Row k="Where" v={s.mode} />
+      </div>
+      <div className="px-4 pb-3">
+        <div className="text-[12px] font-bold text-navy mb-1.5 flex items-center gap-1.5"><Icon name="doc" size={14} /> Please bring / keep ready</div>
+        <ul className="text-[12px] text-slate-600 space-y-1">
+          {C.documents.map(d => <li key={d} className="flex gap-1.5"><span className="text-gold-deep">•</span>{d}</li>)}
+        </ul>
+      </div>
+      <div className="grid grid-cols-2 gap-2 px-4 pb-4">
+        <button onClick={() => downloadICS(a)} className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-navy text-white text-[12.5px] font-semibold py-2.5 hover:bg-navy-2"><Icon name="calendar" size={15} /> Add to Calendar</button>
+        <a href={waLink(a)} target="_blank" rel="noopener" className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#25D366] text-white text-[12.5px] font-semibold py-2.5 hover:brightness-95"><Icon name="wa" size={15} /> Send on WhatsApp</a>
+      </div>
+      <div className="bg-slate-50 text-[11px] text-slate-500 px-4 py-2.5 border-t border-slate-100">Keep your booking ID to reschedule or cancel here anytime. Our counsellor will review your profile and guide you on the best options.</div>
+    </div>
+  );
+}
+
+function BookingCard({ a }) {
+  const s = sessionOf(a.session);
+  return (
+    <div className="rounded-2xl bg-white ring-1 ring-black/5 shadow-md max-w-[300px] px-4 py-3 text-[13px]">
+      <div className="flex items-center justify-between mb-1"><span className="font-mono font-bold text-navy">{a.id}</span><StatusPill s={a.status} /></div>
+      <Row k="Name" v={a.name} />
+      <Row k="Session" v={`${s.icon} ${s.short}`} />
+      <Row k="When" v={`${fmtDay(a.date)}, ${fmtTime(a.time)}`} />
+    </div>
+  );
+}
+
+/* ============================== LANDING PAGE ============================== */
+function Landing({ onAdmin, chat, appts }) {
+  const next = useMemo(() => { const d = availableDays(appts)[0]; return d ? `${dayLabel(d.date)}, ${fmtTime(d.slots[0])}` : "Call us"; }, [appts]);
+  const go = id => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+  return (
+    <div className="min-h-screen overflow-x-hidden">
+      {/* Hero */}
+      <header className="hero-bg text-white relative">
+        <div className="absolute inset-0 grid-lines pointer-events-none" />
+        <nav className="relative max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
+          <Logo light />
+          <div className="hidden md:flex items-center gap-7 text-sm text-white/80">
+            <button onClick={() => go("countries")} className="hover:text-white">Countries</button>
+            <button onClick={() => go("how")} className="hover:text-white">How it works</button>
+            <button onClick={() => go("faq")} className="hover:text-white">FAQs</button>
+            <a href={`tel:${C.brand.phoneTel}`} className="hover:text-white flex items-center gap-1.5"><Icon name="phone" size={15} />{C.brand.phoneDisplay}</a>
+          </div>
+          <button onClick={onAdmin} className="inline-flex items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/20 ring-1 ring-white/20 px-3.5 py-1.5 text-xs font-semibold"><Icon name="lock" size={13} /> Admin</button>
+        </nav>
+
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-8 pb-20 sm:pt-14 sm:pb-28 grid lg:grid-cols-[1.15fr_.85fr] gap-12 items-center">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 ring-1 ring-white/15 px-3 py-1 text-xs text-white/85 mb-6">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Now booking counselling for 2027 intakes
+            </div>
+            <h1 className="font-display text-[40px] leading-[1.05] sm:text-6xl font-bold tracking-tight">
+              Study in Europe & the UK — <span className="italic gold-text">with a plan that fits you.</span>
+            </h1>
+            <p className="mt-5 text-white/75 text-base sm:text-lg max-w-xl">
+              Honest, personal guidance for Pakistani students and parents — Italy, Germany, France and the UK. Our counsellors review your profile and map out your best options.
+            </p>
+            <div className="mt-8 flex flex-col sm:flex-row gap-3">
+              <button onClick={() => chat.current?.open()} className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-gold to-[#E2C26E] text-navy font-bold px-7 py-4 shadow-xl hover:brightness-105 transition">
+                Book Free Consultation <Icon name="arrowRight" size={18} />
+              </button>
+              <a href={`https://wa.me/${C.brand.whatsapp}`} target="_blank" rel="noopener" className="inline-flex items-center justify-center gap-2 rounded-full ring-1 ring-white/30 hover:bg-white/10 px-7 py-4 font-semibold">
+                <Icon name="wa" size={18} /> WhatsApp us
+              </a>
+            </div>
+            <div className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-3 text-[13px]">
+              {[["shield", "Free 15-min discovery call"], ["clock", "Mon–Sat · 10 AM–7 PM"], ["chat", "Urdu & English counselling"], ["users", "Parents welcome"]].map(([i, t]) => (
+                <div key={t} className="flex items-center gap-2 text-white/80"><span className="h-8 w-8 rounded-lg bg-white/10 grid place-items-center text-gold shrink-0"><Icon name={i} size={16} /></span>{t}</div>
+              ))}
+            </div>
+          </div>
+
+          {/* hero card */}
+          <div className="relative hidden sm:block">
+            <div className="absolute -inset-4 rounded-[32px] bg-gold/20 blur-2xl" />
+            <div className="relative rounded-3xl bg-white/95 text-ink p-6 shadow-2xl ring-1 ring-white/40">
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-bold text-navy">Book in under 2 minutes</div>
+                <span className="text-[11px] rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 font-semibold ring-1 ring-emerald-200">● Live</span>
+              </div>
+              <div className="mt-4 space-y-2.5">
+                {C.countries.map(c => (
+                  <button key={c.name} onClick={() => chat.current?.country(c.name)} className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 ring-1 ring-slate-200 hover:ring-gold hover:bg-gold-soft/50 transition text-left">
+                    <Flag country={c} w={32} />
+                    <div className="flex-1"><div className="font-semibold text-sm">{c.name}</div><div className="text-[11px] text-slate-500">{c.intakes}</div></div>
+                    <Icon name="chevR" size={16} className="text-slate-400" />
+                  </button>
+                ))}
+              </div>
+              <div className="mt-5 rounded-xl bg-navy text-white px-4 py-3 flex items-center gap-3">
+                <Icon name="calendar" size={20} className="text-gold" />
+                <div className="text-sm"><div className="text-white/60 text-[11px]">Next free slot (PKT)</div><div className="font-semibold">{next}</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Countries */}
+      <section id="countries" className="max-w-6xl mx-auto px-4 sm:px-6 -mt-10 relative">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {C.countries.map(c => (
+            <div key={c.name} className="group rounded-2xl bg-white p-5 shadow-[0_10px_30px_-15px_rgba(10,26,58,.35)] ring-1 ring-black/5 hover:-translate-y-1 transition flex flex-col">
+              <div className="flex items-center gap-3"><Flag country={c} w={46} /><div><div className="font-display text-xl font-bold text-navy">{c.name}</div><div className="text-[12px] text-slate-500 leading-snug">{c.tagline}</div></div></div>
+              <ul className="mt-4 space-y-2 text-[13.5px] text-slate-700 flex-1">
+                {c.points.map(p => <li key={p} className="flex gap-2"><Icon name="check" size={16} className="text-gold-deep shrink-0 mt-0.5" stroke={2.5} />{p}</li>)}
+              </ul>
+              <div className="mt-4 text-[12px] text-slate-500"><span className="font-semibold text-navy">Intakes:</span> {c.intakes}</div>
+              <button onClick={() => chat.current?.country(c.name)} className="mt-4 inline-flex items-center justify-center gap-1.5 rounded-xl bg-navy text-white text-sm font-semibold py-2.5 group-hover:bg-navy-2">Ask about {c.name} <Icon name="arrowRight" size={15} /></button>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 rounded-2xl bg-white ring-1 ring-black/5 p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+          <div className="flex items-center gap-3"><Flag country={null} w={40} /><div><div className="font-semibold text-navy">Other countries</div><div className="text-[13px] text-slate-500">Canada, Australia, Ireland, Hungary & more — ask our counsellors.</div></div></div>
+          <button onClick={() => chat.current?.country("Other")} className="rounded-xl ring-1 ring-navy/20 px-4 py-2 text-sm font-semibold text-navy hover:bg-navy hover:text-white transition">Ask about another country</button>
+        </div>
+        <p className="text-[11.5px] text-slate-400 mt-3">*Fees, funds requirements and visa rules change regularly — your counsellor will confirm current details for your case.</p>
+      </section>
+
+      {/* How it works */}
+      <section id="how" className="max-w-6xl mx-auto px-4 sm:px-6 py-20">
+        <div className="text-center max-w-2xl mx-auto">
+          <div className="text-gold-deep font-semibold text-sm tracking-wide uppercase">How it works</div>
+          <h2 className="font-display text-3xl sm:text-4xl font-bold text-navy mt-2">From first question to a clear plan</h2>
+        </div>
+        <div className="grid md:grid-cols-3 gap-5 mt-10">
+          {[["chat", "1. Chat for 2 minutes", "Tell our assistant your country, education and goals — in English, Urdu or Roman Urdu."],
+            ["calendar", "2. Pick a slot", "Choose a free discovery call, an in-office session, or an online meeting — whatever suits you."],
+            ["cap", "3. Meet your counsellor", "We review your profile and guide you on universities, timelines and documents. No pressure, no false promises."]].map(([i, t, d]) => (
+            <div key={t} className="rounded-2xl bg-white p-6 ring-1 ring-black/5">
+              <div className="h-12 w-12 rounded-xl bg-gold-soft text-navy grid place-items-center"><Icon name={i} size={22} /></div>
+              <div className="mt-4 font-bold text-navy text-lg">{t}</div>
+              <p className="mt-1.5 text-slate-600 text-[14.5px]">{d}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Sessions */}
+      <section className="bg-navy text-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 grid lg:grid-cols-[.9fr_1.1fr] gap-10 items-center">
+          <div>
+            <h2 className="font-display text-3xl sm:text-4xl font-bold">Choose how you'd like to meet</h2>
+            <p className="text-white/70 mt-3">Not sure yet? Start with the free discovery call — zero commitment.</p>
+            <button onClick={() => chat.current?.open()} className="mt-6 inline-flex items-center gap-2 rounded-full bg-gold text-navy font-bold px-6 py-3">Book now <Icon name="arrowRight" size={17} /></button>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-3">
+            {C.sessionTypes.map(s => (
+              <div key={s.id} className="rounded-2xl bg-white/5 ring-1 ring-white/10 p-5">
+                <div className="text-3xl">{s.icon}</div>
+                <div className="mt-3 font-semibold">{s.name}</div>
+                <div className="text-white/60 text-sm mt-1">{s.mode}</div>
+                {s.fee && <div className="mt-3 inline-block rounded-full bg-gold text-navy text-xs font-bold px-2.5 py-0.5">{s.fee}</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section id="faq" className="max-w-3xl mx-auto px-4 sm:px-6 py-20">
+        <h2 className="font-display text-3xl sm:text-4xl font-bold text-navy text-center">Common questions</h2>
+        <div className="mt-8 space-y-3">
+          {C.faqs.slice(0, 7).map(f => (
+            <details key={f.id} className="group rounded-2xl bg-white ring-1 ring-black/5 px-5 py-4">
+              <summary className="flex items-center justify-between cursor-pointer font-semibold text-navy gap-4">{f.q}<Icon name="chevD" size={18} className="shrink-0 group-open:rotate-180 transition" /></summary>
+              <p className="mt-3 text-slate-600 text-[14.5px] leading-relaxed">{fill(f.a.en)}</p>
+            </details>
+          ))}
+        </div>
+        <div className="text-center mt-8"><button onClick={() => chat.current?.open()} className="text-navy font-semibold underline decoration-gold decoration-2 underline-offset-4">Have another question? Ask our assistant →</button></div>
+      </section>
+
+      {/* Footer */}
+      <footer className="hero-bg text-white/80">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 grid md:grid-cols-3 gap-8 text-sm">
+          <div><Logo light /><p className="mt-4 text-white/60">{C.brand.tagline}.</p></div>
+          <div className="space-y-2">
+            <div className="flex gap-2"><Icon name="pin" size={16} className="text-gold shrink-0 mt-0.5" />{C.brand.address}</div>
+            <div className="flex gap-2"><Icon name="clock" size={16} className="text-gold shrink-0 mt-0.5" />{C.hours.label}</div>
+            <div className="flex gap-2"><Icon name="phone" size={16} className="text-gold shrink-0 mt-0.5" /><a href={`tel:${C.brand.phoneTel}`}>{C.brand.phoneDisplay}</a> · {C.brand.email}</div>
+          </div>
+          <div className="text-white/50 text-[12.5px] leading-relaxed">
+            {C.brand.name} provides counselling and application guidance. Admission and visa decisions are made solely by universities and embassies — we do not guarantee any outcome. Requirements change; your counsellor will confirm details for your case.
+          </div>
+        </div>
+        <div className="border-t border-white/10 text-center text-[12px] text-white/40 py-4">© {new Date().getFullYear()} {C.brand.name}. All rights reserved.</div>
+      </footer>
+    </div>
+  );
+}
+
+/* ============================== ADMIN DASHBOARD ============================== */
+const CSV_COLS = [
+  ["Booking ID", a => a.id], ["Created", a => new Date(a.createdAt).toISOString()], ["Name", a => a.name], ["Phone", a => fmtPhone(a.phone)],
+  ["Country", a => countryLabel(a)], ["Education", a => a.education], ["CGPA / %", a => a.grades], ["English Test", a => a.english],
+  ["Budget", a => a.budget], ["Intake", a => a.intake], ["Decision Maker", a => a.decider], ["Session", a => sessionOf(a.session).name],
+  ["Date", a => a.date], ["Time (PKT)", a => fmtTime(a.time)], ["Lead Score", a => scoreLead(a).level],
+  ["Lead Reason", a => scoreLead(a).checks.map(c => (c.ok ? "✓ " : "✗ ") + c.label).join(" | ")], ["Status", a => a.status], ["Language", a => ({ en: "English", ru: "Roman Urdu", ur: "Urdu" }[a.lang] || "")],
+];
+function exportCSV(rows) {
+  const esc = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const csv = "\uFEFF" + [CSV_COLS.map(c => esc(c[0])).join(","), ...rows.map(a => CSV_COLS.map(c => esc(c[1](a))).join(","))].join("\r\n");
+  downloadFile(`appointments-${todayYmd()}.csv`, csv, "text/csv;charset=utf-8");
+}
+
+function Admin({ appts, updateAppt, resetDemo, onExit }) {
+  const [tab, setTab] = useState("list");
+  const [fCountry, setFCountry] = useState("All");
+  const [fStatus, setFStatus] = useState("All");
+  const [fLead, setFLead] = useState("All");
+  const [fDate, setFDate] = useState("");
+  const [q, setQ] = useState("");
+
+  const rows = useMemo(() => appts.map(a => ({ ...a, score: scoreLead(a) })).sort((x, y) => (y.createdAt || 0) - (x.createdAt || 0)), [appts]);
+  const filtered = rows.filter(a =>
+    (fCountry === "All" || a.country === fCountry) && (fStatus === "All" || a.status === fStatus) && (fLead === "All" || a.score.level === fLead) &&
+    (!fDate || a.date === fDate) && (!q || `${a.name} ${a.phone} ${fmtPhone(a.phone)} ${a.id}`.toLowerCase().includes(q.toLowerCase())));
+
+  const T = todayYmd();
+  const stats = useMemo(() => {
+    const counts = {}; rows.forEach(a => { const k = countryLabel(a).split(" · ")[0]; counts[k] = (counts[k] || 0) + 1; });
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+    return {
+      total: rows.length,
+      today: rows.filter(a => a.createdAt && pktYmdOfEpoch(a.createdAt) === T).length,
+      sessionsToday: rows.filter(a => a.date === T && a.status !== "Cancelled").length,
+      hot: rows.filter(a => a.score.level === "Hot").length,
+      top: top ? top[0] : "—", topN: top ? top[1] : 0,
+    };
+  }, [rows, T]);
+
+  const sel = "rounded-xl bg-white ring-1 ring-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-gold";
+  const anyFilter = fCountry !== "All" || fStatus !== "All" || fLead !== "All" || fDate || q;
+
+  return (
+    <div className="min-h-screen bg-[#F4F2EC]">
+      <header className="hero-bg text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-4"><Logo light /><span className="hidden sm:inline text-xs rounded-full bg-gold/20 text-gold ring-1 ring-gold/40 px-2.5 py-1 font-semibold">Admin Dashboard</span></div>
+          <div className="flex items-center gap-2">
+            <button onClick={resetDemo} className="rounded-full ring-1 ring-white/20 hover:bg-white/10 px-3.5 py-2 text-xs font-semibold flex items-center gap-1.5"><Icon name="refresh" size={14} /> <span className="hidden sm:inline">Reset demo data</span></button>
+            <button onClick={onExit} className="rounded-full bg-white text-navy px-4 py-2 text-xs font-bold flex items-center gap-1.5"><Icon name="arrowLeft" size={14} /> Back to site</button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        {/* Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <Stat icon="users" label="Total leads" value={stats.total} sub={`${stats.sessionsToday} session${stats.sessionsToday === 1 ? "" : "s"} scheduled today`} />
+          <Stat icon="calendar" label="Booked today" value={stats.today} sub="New bookings since midnight" />
+          <Stat icon="flame" label="Hot leads" value={stats.hot} sub={`${Math.round(stats.hot / Math.max(1, stats.total) * 100)}% of all leads`} accent />
+          <Stat icon="globe" label="Top country" value={stats.top} sub={`${stats.topN} lead${stats.topN === 1 ? "" : "s"}`} flag={countryOf(stats.top)} />
+        </div>
+
+        {/* Tabs + actions */}
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+          <div className="inline-flex rounded-xl bg-white ring-1 ring-slate-200 p-1">
+            {[["list", "list", "Appointments"], ["calendar", "calendar", "Calendar"]].map(([k, i, l]) => (
+              <button key={k} onClick={() => setTab(k)} className={"px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition " + (tab === k ? "bg-navy text-white shadow" : "text-slate-600 hover:text-navy")}><Icon name={i} size={15} />{l}</button>
+            ))}
+          </div>
+          <button onClick={() => exportCSV(filtered)} className="rounded-xl bg-gold text-navy px-4 py-2.5 text-sm font-bold flex items-center gap-1.5 shadow-sm hover:brightness-105"><Icon name="download" size={16} /> Export CSV {anyFilter ? `(${filtered.length})` : ""}</button>
+        </div>
+
+        {tab === "list" ? (
+          <>
+            <div className="mt-4 rounded-2xl bg-white ring-1 ring-black/5 p-3 flex flex-wrap gap-2 items-center">
+              <div className="relative flex-1 min-w-[180px]">
+                <Icon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search name, phone or ID" className={sel + " w-full pl-9"} />
+              </div>
+              <select value={fCountry} onChange={e => setFCountry(e.target.value)} className={sel}><option value="All">All countries</option>{C.countries.map(c => <option key={c.name}>{c.name}</option>)}<option value="Other">Other</option></select>
+              <select value={fStatus} onChange={e => setFStatus(e.target.value)} className={sel}><option value="All">All statuses</option>{STATUS.map(s => <option key={s}>{s}</option>)}</select>
+              <select value={fLead} onChange={e => setFLead(e.target.value)} className={sel}><option value="All">All leads</option><option>Hot</option><option>Warm</option><option>Cold</option></select>
+              <input type="date" value={fDate} onChange={e => setFDate(e.target.value)} className={sel} title="Appointment date" />
+              {anyFilter && <button onClick={() => { setFCountry("All"); setFStatus("All"); setFLead("All"); setFDate(""); setQ(""); }} className="text-sm text-slate-500 hover:text-navy px-2">Clear</button>}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden lg:block mt-4 rounded-2xl bg-white ring-1 ring-black/5 overflow-hidden">
+              <div className="overflow-x-auto scroll-thin">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50 text-[11.5px] uppercase tracking-wide text-slate-500">
+                    <tr>{["Booking / Student", "Country", "Academic profile", "Budget & intake", "Session", "Lead score", "Status"].map(h => <th key={h} className="text-left font-semibold px-4 py-3 whitespace-nowrap">{h}</th>)}</tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map(a => {
+                      const s = sessionOf(a.session), fresh = Date.now() - a.createdAt < 15 * 60000;
+                      return (
+                        <tr key={a.id} className={"border-t border-slate-100 align-top " + (fresh ? "bg-gold-soft/40" : "hover:bg-slate-50/60")}>
+                          <td className="px-4 py-3.5">
+                            <div className="flex items-center gap-2"><span className="font-mono text-[12px] font-bold text-navy">{a.id}</span>{fresh && <span className="text-[10px] font-bold rounded bg-gold text-navy px-1.5">NEW</span>}</div>
+                            <div className="font-semibold text-ink mt-0.5">{a.name}</div>
+                            <div className="text-[12px] text-slate-500">{fmtPhone(a.phone)} · {a.decider === "Parent" ? "Parent decides" : a.decider === "Both" ? "Student + parent" : "Student decides"}</div>
+                            <div className="text-[11px] text-slate-400">{a.createdAt ? timeAgo(a.createdAt) : ""}</div>
+                          </td>
+                          <td className="px-4 py-3.5"><div className="flex items-center gap-2 whitespace-nowrap"><Flag country={countryOf(a.country)} w={24} /> <span className="font-medium">{countryLabel(a)}</span></div></td>
+                          <td className="px-4 py-3.5 text-[13px]"><div className="font-medium">{a.education}</div><div className="text-slate-500">{a.grades || "—"}</div><div className="text-slate-500">{a.english}</div></td>
+                          <td className="px-4 py-3.5 text-[13px]"><div className="font-medium whitespace-nowrap">{a.budget || "—"}</div><div className="text-slate-500">Intake: {a.intake || "—"}</div></td>
+                          <td className="px-4 py-3.5 text-[13px] whitespace-nowrap"><div className="font-medium">{s.icon} {s.short}</div><div className="text-slate-500">{fmtDay(a.date)}</div><div className="text-slate-500">{fmtTime(a.time)} PKT</div></td>
+                          <td className="px-4 py-3.5 max-w-[230px]"><LeadBadge level={a.score.level} /><Reasons checks={a.score.checks} /></td>
+                          <td className="px-4 py-3.5"><StatusSelect a={a} updateAppt={updateAppt} /></td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              {!filtered.length && <Empty />}
+            </div>
+
+            {/* Mobile cards */}
+            <div className="lg:hidden mt-4 space-y-3">
+              {filtered.map(a => {
+                const s = sessionOf(a.session);
+                return (
+                  <div key={a.id} className="rounded-2xl bg-white ring-1 ring-black/5 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="font-mono text-[12px] font-bold text-navy">{a.id} <span className="font-sans font-normal text-slate-400">· {timeAgo(a.createdAt)}</span></div>
+                        <div className="font-semibold text-ink text-base truncate">{a.name}</div>
+                        <div className="text-[12.5px] text-slate-500">{fmtPhone(a.phone)} · {a.decider}</div>
+                      </div>
+                      <LeadBadge level={a.score.level} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-3 text-[12.5px]">
+                      <div className="flex items-center gap-1.5"><Flag country={countryOf(a.country)} w={18} className="!rounded-sm" />{countryLabel(a)}</div>
+                      <div>{s.icon} {s.short}</div>
+                      <div className="text-slate-600">{a.education}</div>
+                      <div className="text-slate-600">{fmtDay(a.date)} · {fmtTime(a.time)}</div>
+                      <div className="text-slate-600">{a.grades} · {a.english}</div>
+                      <div className="text-slate-600">{a.budget} · {a.intake}</div>
+                    </div>
+                    <Reasons checks={a.score.checks} full />
+                    <div className="mt-3"><StatusSelect a={a} updateAppt={updateAppt} /></div>
+                  </div>
+                );
+              })}
+              {!filtered.length && <div className="rounded-2xl bg-white"><Empty /></div>}
+            </div>
+            <p className="text-[12px] text-slate-500 mt-4">Lead score: <b>Hot</b> = good grades + English test done + budget fits + intake within {C.scoring.intakeWithinMonths} months · <b>Warm</b> = 2–3 of these · <b>Cold</b> = the rest.</p>
+          </>
+        ) : <CalendarView appts={appts} />}
+      </main>
+    </div>
+  );
+}
+
+const Stat = ({ icon, label, value, sub, accent, flag }) => (
+  <div className={"rounded-2xl p-4 sm:p-5 ring-1 " + (accent ? "bg-navy text-white ring-navy" : "bg-white ring-black/5")}>
+    <div className="flex items-center justify-between">
+      <div className={"text-[12px] font-semibold uppercase tracking-wide " + (accent ? "text-white/60" : "text-slate-500")}>{label}</div>
+      <div className={"h-8 w-8 rounded-lg grid place-items-center " + (accent ? "bg-gold text-navy" : "bg-gold-soft text-navy")}><Icon name={icon} size={16} /></div>
+    </div>
+    <div className="mt-2 flex items-center gap-2"><span className="font-display text-3xl sm:text-4xl font-bold">{value}</span>{flag && <Flag country={flag} w={28} />}</div>
+    <div className={"text-[12px] mt-1 " + (accent ? "text-white/60" : "text-slate-500")}>{sub}</div>
+  </div>
+);
+const Reasons = ({ checks, full }) => {
+  const miss = checks.filter(c => !c.ok);
+  if (full) return <ul className="mt-3 grid grid-cols-1 gap-0.5 text-[12px]">{checks.map(c => <li key={c.short} className={c.ok ? "text-emerald-700" : "text-slate-500"}>{c.ok ? "✓" : "✗"} {c.label}</li>)}</ul>;
+  return (
+    <div className="mt-1.5 text-[11.5px] leading-snug cursor-help" title={checks.map(c => (c.ok ? "✓ " : "✗ ") + c.label).join("\n")}>
+      <div className="text-slate-500 font-semibold">{4 - miss.length}/4 criteria met</div>
+      {checks.filter(c => c.ok).length > 0 && <div className="text-emerald-700">✓ {checks.filter(c => c.ok).map(c => c.short).join(" · ")}</div>}
+      {miss.length > 0 && <div className="text-rose-500/80">✗ {miss.map(c => c.label).join(" · ")}</div>}
+    </div>
+  );
+};
+const StatusSelect = ({ a, updateAppt }) => (
+  <select value={a.status} onChange={e => updateAppt(a.id, { status: e.target.value })}
+    className={"rounded-full px-3 py-1.5 text-xs font-semibold ring-1 outline-none cursor-pointer " + STATUS_STYLE[a.status]}>
+    {STATUS.map(s => <option key={s} value={s}>{s}</option>)}
+  </select>
+);
+const Empty = () => <div className="text-center text-slate-500 py-12 text-sm">No appointments match these filters.</div>;
+
+function CalendarView({ appts }) {
+  const [start, setStart] = useState(todayYmd());
+  const [sel, setSel] = useState(todayYmd());
+  const week = nextDays(7, start);
+  const times = allSlotTimes();
+  const active = appts.filter(a => a.status !== "Cancelled");
+  const dayInfo = d => {
+    const booked = active.filter(a => a.date === d).length;
+    const open = isWorkingDay(d);
+    const free = open ? times.filter(t => slotEpoch(d, t) > Date.now() && !isBooked(appts, d, t)).length : 0;
+    return { booked, free, open };
+  };
+  const shift = n => { const s = addDays(start, n); setStart(s); setSel(s); };
+  const info = dayInfo(sel);
+
+  return (
+    <div className="mt-4 grid lg:grid-cols-[300px_1fr] gap-4">
+      <div className="rounded-2xl bg-white ring-1 ring-black/5 p-3">
+        <div className="flex items-center justify-between px-1 pb-2">
+          <button onClick={() => shift(-7)} className="h-8 w-8 rounded-lg hover:bg-slate-100 grid place-items-center"><Icon name="chevL" size={16} /></button>
+          <div className="text-sm font-semibold text-navy">{fmtDay(week[0]).split(", ")[1]} – {fmtDay(week[6]).split(", ")[1]}</div>
+          <button onClick={() => shift(7)} className="h-8 w-8 rounded-lg hover:bg-slate-100 grid place-items-center"><Icon name="chevR" size={16} /></button>
+        </div>
+        <div className="flex lg:flex-col gap-2 overflow-x-auto scroll-thin pb-1">
+          {week.map(d => {
+            const i = dayInfo(d);
+            return (
+              <button key={d} onClick={() => setSel(d)} className={"shrink-0 lg:w-full text-left rounded-xl px-3 py-2.5 ring-1 transition min-w-[120px] " + (sel === d ? "bg-navy text-white ring-navy" : "ring-slate-200 hover:ring-gold")}>
+                <div className="font-semibold text-sm">{dayLabel(d)}{dayLabel(d) !== fmtDay(d) && <span className={"font-normal " + (sel === d ? "text-white/60" : "text-slate-400")}> · {fmtDay(d).split(", ")[1]}</span>}</div>
+                <div className={"text-[11.5px] mt-0.5 " + (sel === d ? "text-white/70" : "text-slate-500")}>{i.open ? `${i.booked} booked · ${i.free} free` : "Closed"}</div>
+              </button>
+            );
+          })}
+        </div>
+        {start !== todayYmd() && <button onClick={() => { setStart(todayYmd()); setSel(todayYmd()); }} className="mt-2 w-full text-sm text-navy font-semibold py-2 rounded-lg hover:bg-slate-50">Jump to today</button>}
+      </div>
+
+      <div className="rounded-2xl bg-white ring-1 ring-black/5 p-4 sm:p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <div><div className="font-display text-2xl font-bold text-navy">{fmtDay(sel)}</div><div className="text-sm text-slate-500">{info.open ? `${info.booked} booked · ${info.free} free slots remaining · ${C.hours.slotMinutes}-min slots (PKT)` : "Office closed"}</div></div>
+          <div className="flex items-center gap-3 text-[11.5px] text-slate-500"><span className="flex items-center gap-1"><span className="h-3 w-3 rounded bg-navy" /> Booked</span><span className="flex items-center gap-1"><span className="h-3 w-3 rounded border-2 border-dashed border-emerald-400" /> Free</span><span className="flex items-center gap-1"><span className="h-3 w-3 rounded bg-slate-100" /> Past</span></div>
+        </div>
+        {!info.open ? (
+          <div className="rounded-xl bg-slate-50 text-slate-500 text-center py-16">Closed on {DAYS[dow(sel)]}day — {C.hours.label}</div>
+        ) : (
+          <div className="grid sm:grid-cols-2 gap-2">
+            {times.map(t => {
+              const a = active.find(x => x.date === sel && x.time === t);
+              const past = slotEpoch(sel, t) <= Date.now();
+              if (a) {
+                const s = sessionOf(a.session), sc = scoreLead(a);
+                return (
+                  <div key={t} className="rounded-xl bg-navy text-white px-3 py-2.5 flex items-center gap-3">
+                    <div className="text-[12px] font-mono text-gold w-16 shrink-0">{fmtTime(t)}</div>
+                    <div className="min-w-0 flex-1"><div className="font-semibold text-sm truncate">{a.name}</div><div className="text-[11.5px] text-white/60 truncate">{s.icon} {s.short} · {countryLabel(a)} · {a.status}</div></div>
+                    <LeadBadge level={sc.level} />
+                  </div>
+                );
+              }
+              return (
+                <div key={t} className={"rounded-xl px-3 py-2.5 flex items-center gap-3 " + (past ? "bg-slate-50 text-slate-400" : "border-2 border-dashed border-emerald-300 text-emerald-700")}>
+                  <div className="text-[12px] font-mono w-16 shrink-0">{fmtTime(t)}</div>
+                  <div className="text-sm">{past ? "—" : "Available"}</div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ============================== APP ============================== */
+function App() {
+  const [appts, setAppts] = useState(loadAppts);
+  const [view, setView] = useState(() => location.hash === "#admin" ? "admin" : "site");
+  const [, setTick] = useState(0);
+  const chatApi = useRef(null);
+
+  useEffect(() => { saveAppts(appts); }, [appts]);
+  useEffect(() => { const i = setInterval(() => setTick(t => t + 1), 60000); return () => clearInterval(i); }, []);
+  useEffect(() => {
+    const onHash = () => setView(location.hash === "#admin" ? "admin" : "site");
+    const onStorage = e => { if (e.key === STORE_KEY && e.newValue) { try { const v = JSON.parse(e.newValue); if (Array.isArray(v)) setAppts(v); } catch (err) {} } };
+    window.addEventListener("hashchange", onHash); window.addEventListener("storage", onStorage);
+    return () => { window.removeEventListener("hashchange", onHash); window.removeEventListener("storage", onStorage); };
+  }, []);
+
+  const go = v => { setView(v); try { history.replaceState(null, "", location.pathname + location.search + (v === "admin" ? "#admin" : "")); } catch (e) {} window.scrollTo(0, 0); };
+  const addAppt = a => setAppts(p => [a, ...p]);
+  const updateAppt = (id, patch) => setAppts(p => p.map(a => a.id === id ? { ...a, ...patch, updatedAt: Date.now() } : a));
+  const resetDemo = () => { if (confirm("Reset to the 8 sample bookings? Bookings made in this browser will be removed.")) setAppts(seedAppointments()); };
+
+  return (
+    <>
+      {view === "site" ? <Landing onAdmin={() => go("admin")} chat={chatApi} appts={appts} /> : <Admin appts={appts} updateAppt={updateAppt} resetDemo={resetDemo} onExit={() => go("site")} />}
+      <ChatWidget appts={appts} addAppt={addAppt} updateAppt={updateAppt} apiRef={chatApi} hidden={view !== "site"} />
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
