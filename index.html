@@ -279,6 +279,13 @@ const timeAgo = ms => { const s = (Date.now() - ms) / 1000; if (s < 60) return "
 const clockTime = ms => new Date(ms).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 const hasUrdu = s => /[\u0600-\u06FF]/.test(s || "");
 
+// ?embed=1 \u2192 rendered inside the iframe that embed.js puts on the client's own website
+const QS = new URLSearchParams(location.search);
+const EMBED = QS.has("embed");
+const EMBED_PW = +QS.get("pw") || 1024;   // parent page width, passed by embed.js
+const isMobile = () => (EMBED ? EMBED_PW : window.innerWidth) < 640;
+if (EMBED) { document.documentElement.style.background = "transparent"; document.body.style.background = "transparent"; }
+
 const allSlotTimes = () => { const out = []; for (let m = toMin(C.hours.open); m + C.hours.slotMinutes <= toMin(C.hours.close); m += C.hours.slotMinutes) out.push(fromMin(m)); return out; };
 const isWorkingDay = s => C.hours.workingDays.includes(dow(s));
 const isBooked = (appts, date, time, ignoreId) => appts.some(a => a.date === date && a.time === time && a.status !== "Cancelled" && a.id !== ignoreId);
@@ -696,6 +703,8 @@ const ICONS = {
   lock: <><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></>,
   wa: <><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21" /><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1" /></>,
   star: <path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />,
+  code: <path d="m16 18 6-6-6-6M8 6l-6 6 6 6" />,
+  link: <><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></>,
   doc: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" /></>,
 };
 const Icon = ({ name, size = 18, className = "", stroke = 2 }) => (
@@ -760,8 +769,9 @@ const Logo = ({ light }) => (
 const BOOKING_STEPS = ["country", "otherCountry", "name", "education", "grades", "english", "englishScore", "intake", "budget", "decider", "phone", "session", "day", "time", "confirm"];
 const freshState = () => ({ step: "idle", lang: "en", lead: {}, started: false, queue: Promise.resolve(), manage: {}, rescheduleId: null, day: null, presetSession: null, pausedStep: null, pendingTest: null, userClosed: false });
 
-function ChatWidget({ appts, addAppt, updateAppt, apiRef, hidden }) {
-  const [open, setOpen] = useState(false);
+function ChatWidget({ appts, addAppt, updateAppt, apiRef, hidden, mode = "float" }) {
+  const page = mode === "page";   // "page" = full-page booking assistant, "float" = bubble widget
+  const [open, setOpen] = useState(page);
   const [msgs, setMsgs] = useState([]);
   const [chips, setChips] = useState([]);
   const [typing, setTyping] = useState(false);
@@ -1074,7 +1084,7 @@ function ChatWidget({ appts, addAppt, updateAppt, apiRef, hidden }) {
   const openChat = () => {
     setOpen(true); setUnread(0); setPeek(false);
     startConversation();
-    if (window.innerWidth >= 640) setTimeout(() => inputRef.current?.focus(), 350);
+    if (!isMobile()) setTimeout(() => inputRef.current?.focus(), 350);
   };
   const closeChat = () => { setOpen(false); S.current.userClosed = true; };
   const restart = () => {
@@ -1102,18 +1112,25 @@ function ChatWidget({ appts, addAppt, updateAppt, apiRef, hidden }) {
   };
 
   useEffect(() => {
+    if (page) { startConversation(); return; }
     const t = setTimeout(() => {
       if (openRef.current || S.current.userClosed || hiddenRef.current) return;
-      if (window.innerWidth < 640 && !C.chat.autoOpenOnMobile) { startConversation(); setPeek(true); }
+      if (isMobile() && !C.chat.autoOpenOnMobile) { startConversation(); setPeek(true); }
       else openChat();
     }, C.chat.autoOpenDelayMs);
     return () => clearTimeout(t);
   }, []);
 
+  // tell embed.js how big the iframe on the host site needs to be
+  useEffect(() => {
+    if (!EMBED) return;
+    try { window.parent.postMessage({ type: "gp-widget", state: open ? "open" : peek ? "peek" : "closed" }, "*"); } catch (e) {}
+  }, [open, peek]);
+
   const lastBot = [...msgs].reverse().find(m => m.from === "bot" && m.kind === "text");
 
   return (
-    <div style={{ display: hidden ? "none" : undefined }}>
+    <div className={page ? "h-full" : ""} style={{ display: hidden ? "none" : undefined }}>
       {/* Launcher */}
       {!open && (
         <div className="fixed bottom-5 right-4 sm:right-6 z-50 flex flex-col items-end gap-3">
@@ -1132,7 +1149,9 @@ function ChatWidget({ appts, addAppt, updateAppt, apiRef, hidden }) {
 
       {/* Panel */}
       {open && (
-        <div className="fixed z-50 inset-0 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-[400px] sm:h-[min(660px,calc(100vh-48px))] h-[100dvh] flex flex-col bg-white sm:rounded-3xl shadow-[0_30px_80px_-20px_rgba(10,26,58,.55)] overflow-hidden anim-pop ring-1 ring-black/5">
+        <div className={page ? "h-full flex flex-col bg-white rounded-t-3xl sm:rounded-3xl shadow-[0_30px_80px_-20px_rgba(0,0,0,.6)] overflow-hidden ring-1 ring-white/10"
+          : EMBED ? "fixed inset-0 flex flex-col bg-white overflow-hidden anim-pop"
+          : "fixed z-50 inset-0 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-[400px] sm:h-[min(660px,calc(100vh-48px))] h-[100dvh] flex flex-col bg-white sm:rounded-3xl shadow-[0_30px_80px_-20px_rgba(10,26,58,.55)] overflow-hidden anim-pop ring-1 ring-black/5"}>
           <div className="hero-bg text-white px-4 py-3.5 flex items-center gap-3 shrink-0">
             <div className="relative">
               <div className="h-11 w-11 rounded-full bg-gradient-to-br from-gold to-gold-deep grid place-items-center text-navy"><Icon name="cap" size={22} /></div>
@@ -1143,7 +1162,7 @@ function ChatWidget({ appts, addAppt, updateAppt, apiRef, hidden }) {
               <div className="text-xs text-white/70 truncate">{C.brand.name} · Online now</div>
             </div>
             <button onClick={restart} title="Start over" className="h-9 w-9 rounded-full hover:bg-white/10 grid place-items-center"><Icon name="refresh" size={17} /></button>
-            <button onClick={closeChat} title="Close" className="h-9 w-9 rounded-full hover:bg-white/10 grid place-items-center"><Icon name="x" size={20} /></button>
+            {!page && <button onClick={closeChat} title="Close" className="h-9 w-9 rounded-full hover:bg-white/10 grid place-items-center"><Icon name="x" size={20} /></button>}
           </div>
 
           <div className="flex-1 overflow-y-auto chat-bg px-3.5 py-4 space-y-3 scroll-thin">
@@ -1260,168 +1279,46 @@ function BookingCard({ a }) {
   );
 }
 
-/* ============================== LANDING PAGE ============================== */
-function Landing({ onAdmin, chat, appts }) {
-  const next = useMemo(() => { const d = availableDays(appts)[0]; return d ? `${dayLabel(d.date)}, ${fmtTime(d.slots[0])}` : "Call us"; }, [appts]);
-  const go = id => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+/* ============================== BOOKING PAGE (shareable link) ============================== */
+function BookingPage({ onAdmin, appts, chat, children }) {
+  const next = useMemo(() => { const d = availableDays(appts)[0]; return d ? `${dayLabel(d.date)}, ${fmtTime(d.slots[0])} PKT` : "call us"; }, [appts]);
   return (
-    <div className="min-h-screen overflow-x-hidden">
-      {/* Hero */}
-      <header className="hero-bg text-white relative">
-        <div className="absolute inset-0 grid-lines pointer-events-none" />
-        <nav className="relative max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
-          <Logo light />
-          <div className="hidden md:flex items-center gap-7 text-sm text-white/80">
-            <button onClick={() => go("countries")} className="hover:text-white">Countries</button>
-            <button onClick={() => go("how")} className="hover:text-white">How it works</button>
-            <button onClick={() => go("faq")} className="hover:text-white">FAQs</button>
-            <a href={`tel:${C.brand.phoneTel}`} className="hover:text-white flex items-center gap-1.5"><Icon name="phone" size={15} />{C.brand.phoneDisplay}</a>
-          </div>
+    <div className="hero-bg text-white h-[100dvh] flex flex-col relative overflow-hidden">
+      <div className="absolute inset-0 grid-lines pointer-events-none" />
+      <nav className="relative w-full max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3 shrink-0">
+        <Logo light />
+        <div className="flex items-center gap-2">
+          <a href={`tel:${C.brand.phoneTel}`} className="hidden md:inline-flex items-center gap-1.5 text-sm text-white/80 hover:text-white mr-3"><Icon name="phone" size={15} />{C.brand.phoneDisplay}</a>
           <button onClick={onAdmin} className="inline-flex items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/20 ring-1 ring-white/20 px-3.5 py-1.5 text-xs font-semibold"><Icon name="lock" size={13} /> Admin</button>
-        </nav>
+        </div>
+      </nav>
 
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-8 pb-20 sm:pt-14 sm:pb-28 grid lg:grid-cols-[1.15fr_.85fr] gap-12 items-center">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 ring-1 ring-white/15 px-3 py-1 text-xs text-white/85 mb-6">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Now booking counselling for 2027 intakes
-            </div>
-            <h1 className="font-display text-[40px] leading-[1.05] sm:text-6xl font-bold tracking-tight">
-              Study in Europe & the UK — <span className="italic gold-text">with a plan that fits you.</span>
-            </h1>
-            <p className="mt-5 text-white/75 text-base sm:text-lg max-w-xl">
-              Honest, personal guidance for Pakistani students and parents — Italy, Germany, France and the UK. Our counsellors review your profile and map out your best options.
-            </p>
-            <div className="mt-8 flex flex-col sm:flex-row gap-3">
-              <button onClick={() => chat.current?.open()} className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-gold to-[#E2C26E] text-navy font-bold px-7 py-4 shadow-xl hover:brightness-105 transition">
-                Book Free Consultation <Icon name="arrowRight" size={18} />
+      <main className="relative flex-1 min-h-0 w-full max-w-6xl mx-auto sm:px-6 sm:pb-6 grid lg:grid-cols-[1fr_440px] lg:gap-14">
+        <aside className="hidden lg:flex flex-col justify-center py-6 min-h-0">
+          <div className="inline-flex self-start items-center gap-2 rounded-full bg-white/10 ring-1 ring-white/15 px-3 py-1 text-xs text-white/85">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Online now · replies instantly
+          </div>
+          <h1 className="font-display text-5xl xl:text-[56px] leading-[1.05] font-bold tracking-tight mt-5">
+            Book your <span className="italic gold-text">free consultation</span> in 2 minutes.
+          </h1>
+          <p className="mt-4 text-white/70 text-lg max-w-lg">Chat with our assistant in English, Urdu or Roman Urdu, pick a time that suits you, and a counsellor will review your profile.</p>
+          <div className="mt-7 grid grid-cols-2 gap-3 max-w-lg">
+            {C.countries.map(c => (
+              <button key={c.name} onClick={() => chat.current?.country(c.name)} className="flex items-center gap-3 rounded-xl bg-white/5 ring-1 ring-white/10 hover:ring-gold hover:bg-white/10 px-3 py-2.5 text-left transition">
+                <Flag country={c} w={30} />
+                <div className="min-w-0"><div className="font-semibold text-sm">{c.name}</div><div className="text-[11px] text-white/50 truncate">{c.intakes}</div></div>
               </button>
-              <a href={`https://wa.me/${C.brand.whatsapp}`} target="_blank" rel="noopener" className="inline-flex items-center justify-center gap-2 rounded-full ring-1 ring-white/30 hover:bg-white/10 px-7 py-4 font-semibold">
-                <Icon name="wa" size={18} /> WhatsApp us
-              </a>
-            </div>
-            <div className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-3 text-[13px]">
-              {[["shield", "Free 15-min discovery call"], ["clock", "Mon–Sat · 10 AM–7 PM"], ["chat", "Urdu & English counselling"], ["users", "Parents welcome"]].map(([i, t]) => (
-                <div key={t} className="flex items-center gap-2 text-white/80"><span className="h-8 w-8 rounded-lg bg-white/10 grid place-items-center text-gold shrink-0"><Icon name={i} size={16} /></span>{t}</div>
-              ))}
-            </div>
-          </div>
-
-          {/* hero card */}
-          <div className="relative hidden sm:block">
-            <div className="absolute -inset-4 rounded-[32px] bg-gold/20 blur-2xl" />
-            <div className="relative rounded-3xl bg-white/95 text-ink p-6 shadow-2xl ring-1 ring-white/40">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-bold text-navy">Book in under 2 minutes</div>
-                <span className="text-[11px] rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 font-semibold ring-1 ring-emerald-200">● Live</span>
-              </div>
-              <div className="mt-4 space-y-2.5">
-                {C.countries.map(c => (
-                  <button key={c.name} onClick={() => chat.current?.country(c.name)} className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 ring-1 ring-slate-200 hover:ring-gold hover:bg-gold-soft/50 transition text-left">
-                    <Flag country={c} w={32} />
-                    <div className="flex-1"><div className="font-semibold text-sm">{c.name}</div><div className="text-[11px] text-slate-500">{c.intakes}</div></div>
-                    <Icon name="chevR" size={16} className="text-slate-400" />
-                  </button>
-                ))}
-              </div>
-              <div className="mt-5 rounded-xl bg-navy text-white px-4 py-3 flex items-center gap-3">
-                <Icon name="calendar" size={20} className="text-gold" />
-                <div className="text-sm"><div className="text-white/60 text-[11px]">Next free slot (PKT)</div><div className="font-semibold">{next}</div></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Countries */}
-      <section id="countries" className="max-w-6xl mx-auto px-4 sm:px-6 -mt-10 relative">
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {C.countries.map(c => (
-            <div key={c.name} className="group rounded-2xl bg-white p-5 shadow-[0_10px_30px_-15px_rgba(10,26,58,.35)] ring-1 ring-black/5 hover:-translate-y-1 transition flex flex-col">
-              <div className="flex items-center gap-3"><Flag country={c} w={46} /><div><div className="font-display text-xl font-bold text-navy">{c.name}</div><div className="text-[12px] text-slate-500 leading-snug">{c.tagline}</div></div></div>
-              <ul className="mt-4 space-y-2 text-[13.5px] text-slate-700 flex-1">
-                {c.points.map(p => <li key={p} className="flex gap-2"><Icon name="check" size={16} className="text-gold-deep shrink-0 mt-0.5" stroke={2.5} />{p}</li>)}
-              </ul>
-              <div className="mt-4 text-[12px] text-slate-500"><span className="font-semibold text-navy">Intakes:</span> {c.intakes}</div>
-              <button onClick={() => chat.current?.country(c.name)} className="mt-4 inline-flex items-center justify-center gap-1.5 rounded-xl bg-navy text-white text-sm font-semibold py-2.5 group-hover:bg-navy-2">Ask about {c.name} <Icon name="arrowRight" size={15} /></button>
-            </div>
-          ))}
-        </div>
-        <div className="mt-4 rounded-2xl bg-white ring-1 ring-black/5 p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-          <div className="flex items-center gap-3"><Flag country={null} w={40} /><div><div className="font-semibold text-navy">Other countries</div><div className="text-[13px] text-slate-500">Canada, Australia, Ireland, Hungary & more — ask our counsellors.</div></div></div>
-          <button onClick={() => chat.current?.country("Other")} className="rounded-xl ring-1 ring-navy/20 px-4 py-2 text-sm font-semibold text-navy hover:bg-navy hover:text-white transition">Ask about another country</button>
-        </div>
-        <p className="text-[11.5px] text-slate-400 mt-3">*Fees, funds requirements and visa rules change regularly — your counsellor will confirm current details for your case.</p>
-      </section>
-
-      {/* How it works */}
-      <section id="how" className="max-w-6xl mx-auto px-4 sm:px-6 py-20">
-        <div className="text-center max-w-2xl mx-auto">
-          <div className="text-gold-deep font-semibold text-sm tracking-wide uppercase">How it works</div>
-          <h2 className="font-display text-3xl sm:text-4xl font-bold text-navy mt-2">From first question to a clear plan</h2>
-        </div>
-        <div className="grid md:grid-cols-3 gap-5 mt-10">
-          {[["chat", "1. Chat for 2 minutes", "Tell our assistant your country, education and goals — in English, Urdu or Roman Urdu."],
-            ["calendar", "2. Pick a slot", "Choose a free discovery call, an in-office session, or an online meeting — whatever suits you."],
-            ["cap", "3. Meet your counsellor", "We review your profile and guide you on universities, timelines and documents. No pressure, no false promises."]].map(([i, t, d]) => (
-            <div key={t} className="rounded-2xl bg-white p-6 ring-1 ring-black/5">
-              <div className="h-12 w-12 rounded-xl bg-gold-soft text-navy grid place-items-center"><Icon name={i} size={22} /></div>
-              <div className="mt-4 font-bold text-navy text-lg">{t}</div>
-              <p className="mt-1.5 text-slate-600 text-[14.5px]">{d}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Sessions */}
-      <section className="bg-navy text-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 grid lg:grid-cols-[.9fr_1.1fr] gap-10 items-center">
-          <div>
-            <h2 className="font-display text-3xl sm:text-4xl font-bold">Choose how you'd like to meet</h2>
-            <p className="text-white/70 mt-3">Not sure yet? Start with the free discovery call — zero commitment.</p>
-            <button onClick={() => chat.current?.open()} className="mt-6 inline-flex items-center gap-2 rounded-full bg-gold text-navy font-bold px-6 py-3">Book now <Icon name="arrowRight" size={17} /></button>
-          </div>
-          <div className="grid sm:grid-cols-3 gap-3">
-            {C.sessionTypes.map(s => (
-              <div key={s.id} className="rounded-2xl bg-white/5 ring-1 ring-white/10 p-5">
-                <div className="text-3xl">{s.icon}</div>
-                <div className="mt-3 font-semibold">{s.name}</div>
-                <div className="text-white/60 text-sm mt-1">{s.mode}</div>
-                {s.fee && <div className="mt-3 inline-block rounded-full bg-gold text-navy text-xs font-bold px-2.5 py-0.5">{s.fee}</div>}
-              </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section id="faq" className="max-w-3xl mx-auto px-4 sm:px-6 py-20">
-        <h2 className="font-display text-3xl sm:text-4xl font-bold text-navy text-center">Common questions</h2>
-        <div className="mt-8 space-y-3">
-          {C.faqs.slice(0, 7).map(f => (
-            <details key={f.id} className="group rounded-2xl bg-white ring-1 ring-black/5 px-5 py-4">
-              <summary className="flex items-center justify-between cursor-pointer font-semibold text-navy gap-4">{f.q}<Icon name="chevD" size={18} className="shrink-0 group-open:rotate-180 transition" /></summary>
-              <p className="mt-3 text-slate-600 text-[14.5px] leading-relaxed">{fill(f.a.en)}</p>
-            </details>
-          ))}
-        </div>
-        <div className="text-center mt-8"><button onClick={() => chat.current?.open()} className="text-navy font-semibold underline decoration-gold decoration-2 underline-offset-4">Have another question? Ask our assistant →</button></div>
-      </section>
-
-      {/* Footer */}
-      <footer className="hero-bg text-white/80">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 grid md:grid-cols-3 gap-8 text-sm">
-          <div><Logo light /><p className="mt-4 text-white/60">{C.brand.tagline}.</p></div>
-          <div className="space-y-2">
-            <div className="flex gap-2"><Icon name="pin" size={16} className="text-gold shrink-0 mt-0.5" />{C.brand.address}</div>
-            <div className="flex gap-2"><Icon name="clock" size={16} className="text-gold shrink-0 mt-0.5" />{C.hours.label}</div>
-            <div className="flex gap-2"><Icon name="phone" size={16} className="text-gold shrink-0 mt-0.5" /><a href={`tel:${C.brand.phoneTel}`}>{C.brand.phoneDisplay}</a> · {C.brand.email}</div>
+          <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-[13px] text-white/75">
+            {[["calendar", `Next free slot: ${next}`], ["clock", "Mon–Sat · 10 AM – 7 PM"], ["shield", "Free 15-min discovery call"]].map(([i, t]) => (
+              <div key={t} className="flex items-center gap-2"><Icon name={i} size={16} className="text-gold" />{t}</div>
+            ))}
           </div>
-          <div className="text-white/50 text-[12.5px] leading-relaxed">
-            {C.brand.name} provides counselling and application guidance. Admission and visa decisions are made solely by universities and embassies — we do not guarantee any outcome. Requirements change; your counsellor will confirm details for your case.
-          </div>
-        </div>
-        <div className="border-t border-white/10 text-center text-[12px] text-white/40 py-4">© {new Date().getFullYear()} {C.brand.name}. All rights reserved.</div>
-      </footer>
+          <p className="mt-8 text-[11.5px] text-white/40 max-w-lg">{C.brand.name} provides counselling and guidance. Admission and visa decisions are made by universities and embassies — we don't guarantee outcomes.</p>
+        </aside>
+        <div className="min-h-0 h-full lg:py-2">{children}</div>
+      </main>
     </div>
   );
 }
@@ -1493,7 +1390,7 @@ function Admin({ appts, updateAppt, resetDemo, onExit }) {
         {/* Tabs + actions */}
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
           <div className="inline-flex rounded-xl bg-white ring-1 ring-slate-200 p-1">
-            {[["list", "list", "Appointments"], ["calendar", "calendar", "Calendar"]].map(([k, i, l]) => (
+            {[["list", "list", "Appointments"], ["calendar", "calendar", "Calendar"], ["install", "code", "Add to website"]].map(([k, i, l]) => (
               <button key={k} onClick={() => setTab(k)} className={"px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition " + (tab === k ? "bg-navy text-white shadow" : "text-slate-600 hover:text-navy")}><Icon name={i} size={15} />{l}</button>
             ))}
           </div>
@@ -1578,7 +1475,7 @@ function Admin({ appts, updateAppt, resetDemo, onExit }) {
             </div>
             <p className="text-[12px] text-slate-500 mt-4">Lead score: <b>Hot</b> = good grades + English test done + budget fits + intake within {C.scoring.intakeWithinMonths} months · <b>Warm</b> = 2–3 of these · <b>Cold</b> = the rest.</p>
           </>
-        ) : <CalendarView appts={appts} />}
+        ) : tab === "calendar" ? <CalendarView appts={appts} /> : <InstallView />}
       </main>
     </div>
   );
@@ -1612,6 +1509,52 @@ const StatusSelect = ({ a, updateAppt }) => (
   </select>
 );
 const Empty = () => <div className="text-center text-slate-500 py-12 text-sm">No appointments match these filters.</div>;
+
+function InstallView() {
+  const base = location.origin + location.pathname.replace(/[^/]*$/, "");
+  const snippet = `<script src="${base}embed.js" defer><\/script>`;
+  const local = location.protocol === "file:" || /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+  const [copied, setCopied] = useState("");
+  const copy = (text, key) => {
+    try { navigator.clipboard.writeText(text).then(() => { setCopied(key); setTimeout(() => setCopied(""), 1500); }); } catch (e) {}
+  };
+  const CopyBtn = ({ text, k }) => (
+    <button onClick={() => copy(text, k)} className="shrink-0 rounded-lg bg-gold text-navy px-3 py-2 text-xs font-bold">{copied === k ? "Copied ✓" : "Copy"}</button>
+  );
+  return (
+    <div className="mt-4 grid lg:grid-cols-2 gap-4">
+      <div className="rounded-2xl bg-white ring-1 ring-black/5 p-5">
+        <div className="flex items-center gap-2 font-bold text-navy text-lg"><Icon name="code" size={20} /> Add the assistant to your existing website</div>
+        <p className="text-sm text-slate-600 mt-1.5">Paste this one line just before <code className="text-[12px] bg-slate-100 px-1 rounded">&lt;/body&gt;</code> on your site. A gold chat button appears bottom-right, greets visitors and books appointments. It doesn't change your site's design.</p>
+        <div className="mt-4 flex items-start gap-2 rounded-xl bg-navy text-gold-soft p-3">
+          <code className="flex-1 min-w-0 break-all text-[12.5px] font-mono">{snippet}</code>
+          <CopyBtn text={snippet} k="snippet" />
+        </div>
+        <ul className="mt-4 text-[13px] text-slate-600 space-y-1.5">
+          <li><b className="text-navy">WordPress:</b> a header/footer code plugin (e.g. WPCode) → Footer → paste.</li>
+          <li><b className="text-navy">Wix:</b> Settings → Custom Code → Add Code → Body - end.</li>
+          <li><b className="text-navy">Shopify:</b> Online Store → Themes → Edit code → theme.liquid → before &lt;/body&gt;.</li>
+          <li><b className="text-navy">Custom site:</b> your developer pastes it into the footer template.</li>
+        </ul>
+      </div>
+      <div className="rounded-2xl bg-white ring-1 ring-black/5 p-5">
+        <div className="flex items-center gap-2 font-bold text-navy text-lg"><Icon name="link" size={20} /> Share your booking link</div>
+        <p className="text-sm text-slate-600 mt-1.5">The same assistant as a full page. Put it in your Instagram & Facebook bio, WhatsApp Business auto-reply, Google Business profile and ads.</p>
+        <div className="mt-4 flex items-center gap-2 rounded-xl bg-slate-50 ring-1 ring-slate-200 p-3">
+          <code className="flex-1 min-w-0 break-all text-[12.5px] font-mono text-navy">{base}</code>
+          <CopyBtn text={base} k="link" />
+        </div>
+        <a href={`https://wa.me/?text=${encodeURIComponent(`Book your free study-abroad consultation with ${C.brand.name}: ${base}`)}`} target="_blank" rel="noopener"
+          className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-[#25D366] text-white text-sm font-semibold px-4 py-2.5"><Icon name="wa" size={16} /> Share on WhatsApp</a>
+      </div>
+      {local && (
+        <div className="lg:col-span-2 rounded-2xl bg-amber-50 ring-1 ring-amber-200 text-amber-900 text-[13px] p-4">
+          You're viewing a local copy, so the code and link above only work on this computer. Once these files are hosted (e.g. GitHub Pages), this tab shows the real code and link.
+        </div>
+      )}
+    </div>
+  );
+}
 
 function CalendarView({ appts }) {
   const [start, setStart] = useState(todayYmd());
@@ -1689,14 +1632,14 @@ function CalendarView({ appts }) {
 /* ============================== APP ============================== */
 function App() {
   const [appts, setAppts] = useState(loadAppts);
-  const [view, setView] = useState(() => location.hash === "#admin" ? "admin" : "site");
+  const [view, setView] = useState(() => location.hash === "#admin" ? "admin" : "book");
   const [, setTick] = useState(0);
   const chatApi = useRef(null);
 
   useEffect(() => { saveAppts(appts); }, [appts]);
   useEffect(() => { const i = setInterval(() => setTick(t => t + 1), 60000); return () => clearInterval(i); }, []);
   useEffect(() => {
-    const onHash = () => setView(location.hash === "#admin" ? "admin" : "site");
+    const onHash = () => setView(location.hash === "#admin" ? "admin" : "book");
     const onStorage = e => { if (e.key === STORE_KEY && e.newValue) { try { const v = JSON.parse(e.newValue); if (Array.isArray(v)) setAppts(v); } catch (err) {} } };
     window.addEventListener("hashchange", onHash); window.addEventListener("storage", onStorage);
     return () => { window.removeEventListener("hashchange", onHash); window.removeEventListener("storage", onStorage); };
@@ -1706,11 +1649,15 @@ function App() {
   const addAppt = a => setAppts(p => [a, ...p]);
   const updateAppt = (id, patch) => setAppts(p => p.map(a => a.id === id ? { ...a, ...patch, updatedAt: Date.now() } : a));
   const resetDemo = () => { if (confirm("Reset to the 8 sample bookings? Bookings made in this browser will be removed.")) setAppts(seedAppointments()); };
+  const chatProps = { appts, addAppt, updateAppt, apiRef: chatApi };
 
+  if (EMBED) return <ChatWidget {...chatProps} mode="float" />;
   return (
     <>
-      {view === "site" ? <Landing onAdmin={() => go("admin")} chat={chatApi} appts={appts} /> : <Admin appts={appts} updateAppt={updateAppt} resetDemo={resetDemo} onExit={() => go("site")} />}
-      <ChatWidget appts={appts} addAppt={addAppt} updateAppt={updateAppt} apiRef={chatApi} hidden={view !== "site"} />
+      <div style={{ display: view === "admin" ? "none" : undefined }}>
+        <BookingPage onAdmin={() => go("admin")} chat={chatApi} appts={appts}><ChatWidget {...chatProps} mode="page" /></BookingPage>
+      </div>
+      {view === "admin" && <Admin appts={appts} updateAppt={updateAppt} resetDemo={resetDemo} onExit={() => go("book")} />}
     </>
   );
 }
