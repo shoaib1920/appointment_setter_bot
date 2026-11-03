@@ -233,6 +233,7 @@ tailwind.config = {
       linear-gradient(160deg, var(--navy) 0%, var(--navy-2) 100%);
   }
   .grid-lines { background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px); background-size: 48px 48px; }
+  .wa-bg { background-color: #EFEAE2; background-image: radial-gradient(rgba(0,0,0,.035) 1px, transparent 1px); background-size: 16px 16px; }
   .chat-bg { background-color: #F6F3EC; background-image: radial-gradient(rgba(10,26,58,.05) 1px, transparent 1px); background-size: 18px 18px; }
   .scroll-thin::-webkit-scrollbar { width: 6px; height: 6px; } .scroll-thin::-webkit-scrollbar-thumb { background: rgba(10,26,58,.18); border-radius: 9999px; }
   .gold-text { background: linear-gradient(90deg, var(--gold), #F2D98B, var(--gold)); -webkit-background-clip: text; background-clip: text; color: transparent; }
@@ -462,7 +463,7 @@ const STR = {
   c_keep: ["Keep it", "Aise hi rehne dein", "ایسے ہی رہنے دیں"],
   c_tryAgain: ["Try again", "Dobara try karein", "دوبارہ کوشش کریں"],
 };
-const GLOBAL_VARS = { brand: C.brand.name, city: C.brand.city, phone: C.brand.phoneDisplay, hours: C.hours.label, address: C.brand.address, prefix: C.booking.idPrefix };
+const GLOBAL_VARS = { brand: C.brand.name, city: C.brand.city, phone: C.brand.phoneDisplay, hours: C.hours.label, address: C.brand.address, prefix: C.booking.idPrefix, bot: C.botName };
 const fill = (s, vars = {}) => s.replace(/\{(\w+)\}/g, (_, k) => vars[k] != null ? vars[k] : GLOBAL_VARS[k] != null ? GLOBAL_VARS[k] : "");
 const tr = (k, lang, vars) => { const e = STR[k]; if (!e) return k; return fill(e[lang === "ru" ? 1 : lang === "ur" ? 2 : 0] || e[0], vars); };
 const faqAnswer = (f, lang) => fill(f.a[lang] || f.a.en);
@@ -765,6 +766,17 @@ const Logo = ({ light }) => (
   </div>
 );
 
+/* ============================== BOOKING RECORDS ============================== */
+const nextBookingId = appts => C.booking.idPrefix + (appts.reduce((m, a) => Math.max(m, parseInt(String(a.id).replace(/\D/g, ""), 10) || 0), C.booking.startId - 1) + 1);
+// flatten a lead's answers into the appointment fields the dashboard and scoring use
+const leadFields = L => ({
+  name: L.name, phone: L.phone, country: L.country, countryOther: L.countryOther || null, education: L.education,
+  grades: L.grades?.label, gradesKind: L.grades?.kind, gradesValue: L.grades?.value, gradesScale: L.grades?.scale,
+  english: L.english?.label, englishTest: L.english?.test, englishScore: L.english?.score, englishDone: !!L.english?.done,
+  budget: L.budget?.label, budgetLakh: L.budget?.lakh ?? null, intake: L.intake?.label, intakeDate: L.intake?.date || null,
+  decider: L.decider, session: L.session, date: L.date, time: L.time,
+});
+
 /* ============================== CHAT WIDGET ============================== */
 const BOOKING_STEPS = ["country", "otherCountry", "name", "education", "grades", "english", "englishScore", "intake", "budget", "decider", "phone", "session", "day", "time", "confirm"];
 const freshState = () => ({ step: "idle", lang: "en", lead: {}, started: false, queue: Promise.resolve(), manage: {}, rescheduleId: null, day: null, presetSession: null, pausedStep: null, pendingTest: null, userClosed: false });
@@ -918,15 +930,7 @@ function ChatWidget({ appts, addAppt, updateAppt, apiRef, hidden, mode = "float"
       s.rescheduleId = null; s.step = "done";
       return say([T("rescheduled", { id }), { kind: "success", data: { ...old, date: L.date, time: L.time } }], doneChips());
     }
-    const max = appts.reduce((m, a) => Math.max(m, parseInt(String(a.id).replace(/\D/g, ""), 10) || 0), C.booking.startId - 1);
-    const appt = {
-      id: C.booking.idPrefix + (max + 1), createdAt: Date.now(), status: "New", lang: s.lang, source: "Chatbot",
-      name: L.name, phone: L.phone, country: L.country, countryOther: L.countryOther || null, education: L.education,
-      grades: L.grades?.label, gradesKind: L.grades?.kind, gradesValue: L.grades?.value, gradesScale: L.grades?.scale,
-      english: L.english?.label, englishTest: L.english?.test, englishScore: L.english?.score, englishDone: !!L.english?.done,
-      budget: L.budget?.label, budgetLakh: L.budget?.lakh ?? null, intake: L.intake?.label, intakeDate: L.intake?.date || null,
-      decider: L.decider, session: L.session, date: L.date, time: L.time,
-    };
+    const appt = { id: nextBookingId(appts), createdAt: Date.now(), status: "New", lang: s.lang, source: "Chatbot", ...leadFields(L) };
     addAppt(appt);
     s.step = "done"; s.presetSession = null;
     return say([T("booked", { first: first() }), { kind: "success", data: appt }], doneChips());
@@ -1280,7 +1284,7 @@ function BookingCard({ a }) {
 }
 
 /* ============================== BOOKING PAGE (shareable link) ============================== */
-function BookingPage({ onAdmin, appts, chat, children }) {
+function BookingPage({ onAdmin, onSetter, appts, chat, children }) {
   const next = useMemo(() => { const d = availableDays(appts)[0]; return d ? `${dayLabel(d.date)}, ${fmtTime(d.slots[0])} PKT` : "call us"; }, [appts]);
   return (
     <div className="hero-bg text-white h-[100dvh] flex flex-col relative overflow-hidden">
@@ -1289,6 +1293,7 @@ function BookingPage({ onAdmin, appts, chat, children }) {
         <Logo light />
         <div className="flex items-center gap-2">
           <a href={`tel:${C.brand.phoneTel}`} className="hidden md:inline-flex items-center gap-1.5 text-sm text-white/80 hover:text-white mr-3"><Icon name="phone" size={15} />{C.brand.phoneDisplay}</a>
+          <button onClick={onSetter} className="inline-flex items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/20 ring-1 ring-white/20 px-3.5 py-1.5 text-xs font-semibold"><Icon name="wa" size={13} /> WhatsApp setter</button>
           <button onClick={onAdmin} className="inline-flex items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/20 ring-1 ring-white/20 px-3.5 py-1.5 text-xs font-semibold"><Icon name="lock" size={13} /> Admin</button>
         </div>
       </nav>
@@ -1329,7 +1334,7 @@ const CSV_COLS = [
   ["Country", a => countryLabel(a)], ["Education", a => a.education], ["CGPA / %", a => a.grades], ["English Test", a => a.english],
   ["Budget", a => a.budget], ["Intake", a => a.intake], ["Decision Maker", a => a.decider], ["Session", a => sessionOf(a.session).name],
   ["Date", a => a.date], ["Time (PKT)", a => fmtTime(a.time)], ["Lead Score", a => scoreLead(a).level],
-  ["Lead Reason", a => scoreLead(a).checks.map(c => (c.ok ? "✓ " : "✗ ") + c.label).join(" | ")], ["Status", a => a.status], ["Language", a => ({ en: "English", ru: "Roman Urdu", ur: "Urdu" }[a.lang] || "")],
+  ["Lead Reason", a => scoreLead(a).checks.map(c => (c.ok ? "✓ " : "✗ ") + c.label).join(" | ")], ["Status", a => a.status], ["Source", a => a.source || "Chatbot"], ["Language", a => ({ en: "English", ru: "Roman Urdu", ur: "Urdu" }[a.lang] || "")],
 ];
 function exportCSV(rows) {
   const esc = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
@@ -1337,7 +1342,7 @@ function exportCSV(rows) {
   downloadFile(`appointments-${todayYmd()}.csv`, csv, "text/csv;charset=utf-8");
 }
 
-function Admin({ appts, updateAppt, resetDemo, onExit }) {
+function Admin({ appts, updateAppt, resetDemo, onExit, onSetter }) {
   const [tab, setTab] = useState("list");
   const [fCountry, setFCountry] = useState("All");
   const [fStatus, setFStatus] = useState("All");
@@ -1372,6 +1377,7 @@ function Admin({ appts, updateAppt, resetDemo, onExit }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-4"><Logo light /><span className="hidden sm:inline text-xs rounded-full bg-gold/20 text-gold ring-1 ring-gold/40 px-2.5 py-1 font-semibold">Admin Dashboard</span></div>
           <div className="flex items-center gap-2">
+            <button onClick={onSetter} className="rounded-full ring-1 ring-white/20 hover:bg-white/10 px-3.5 py-2 text-xs font-semibold flex items-center gap-1.5"><Icon name="wa" size={14} /> <span className="hidden sm:inline">WhatsApp setter</span></button>
             <button onClick={resetDemo} className="rounded-full ring-1 ring-white/20 hover:bg-white/10 px-3.5 py-2 text-xs font-semibold flex items-center gap-1.5"><Icon name="refresh" size={14} /> <span className="hidden sm:inline">Reset demo data</span></button>
             <button onClick={onExit} className="rounded-full bg-white text-navy px-4 py-2 text-xs font-bold flex items-center gap-1.5"><Icon name="arrowLeft" size={14} /> Back to site</button>
           </div>
@@ -1424,7 +1430,7 @@ function Admin({ appts, updateAppt, resetDemo, onExit }) {
                       return (
                         <tr key={a.id} className={"border-t border-slate-100 align-top " + (fresh ? "bg-gold-soft/40" : "hover:bg-slate-50/60")}>
                           <td className="px-4 py-3.5">
-                            <div className="flex items-center gap-2"><span className="font-mono text-[12px] font-bold text-navy">{a.id}</span>{fresh && <span className="text-[10px] font-bold rounded bg-gold text-navy px-1.5">NEW</span>}</div>
+                            <div className="flex items-center gap-2"><span className="font-mono text-[12px] font-bold text-navy">{a.id}</span>{fresh && <span className="text-[10px] font-bold rounded bg-gold text-navy px-1.5">NEW</span>}{a.source === "WhatsApp" && <span className="text-[10px] font-bold rounded bg-[#25D366]/15 text-[#0A7A3E] px-1.5">WhatsApp</span>}</div>
                             <div className="font-semibold text-ink mt-0.5">{a.name}</div>
                             <div className="text-[12px] text-slate-500">{fmtPhone(a.phone)} · {a.decider === "Parent" ? "Parent decides" : a.decider === "Both" ? "Student + parent" : "Student decides"}</div>
                             <div className="text-[11px] text-slate-400">{a.createdAt ? timeAgo(a.createdAt) : ""}</div>
@@ -1629,23 +1635,923 @@ function CalendarView({ appts }) {
   );
 }
 
+/* ============================== WHATSAPP APPOINTMENT SETTER ============================== */
+// The setter goes after leads instead of waiting for them: every new lead (Facebook/Instagram ad,
+// missed call, website form, old enquiry list) gets a WhatsApp message within seconds. It qualifies
+// them, books the free call, follows up when they go quiet, reminds them before the call and
+// re-books no-shows. In this demo the students are simulated personas (or you type as the student)
+// and the clock can be fast-forwarded to show follow-ups and reminders.
+const HOUR = 3600000, DAY = 24 * HOUR;
+const FOLLOW_UPS = [HOUR, DAY, 3 * DAY];   // silence before follow-up 1, 2 and 3
+const SETTER_KEY = "gp_setter_v1";
+
+Object.assign(STR, {
+  w_intro: ["Assalam-o-Alaikum {first}! 👋 This is {bot} from {brand}. Thanks for your enquiry about studying in {country} through {src}.\n\nCan I ask a few quick questions so the right counsellor can guide you? It takes about a minute.",
+    "Assalam-o-Alaikum {first}! 👋 Main {brand} se {bot} hoon. {src} pe {country} mein parhai ki inquiry ka shukriya.\n\nKya main kuch chhotay sawal pooch loon taake sahi counsellor aap ko guide kare? Bas 1 minute lagega.",
+    "السلام علیکم {first}! 👋 میں {brand} سے {bot} ہوں۔ {src} پر {country} میں تعلیم کی انکوائری کا شکریہ۔\n\nکیا میں چند مختصر سوال پوچھ لوں تاکہ درست کونسلر آپ کی رہنمائی کرے؟ صرف ایک منٹ لگے گا۔"],
+  w_introMissed: ["Assalam-o-Alaikum! 👋 Sorry we missed your call. This is {bot} from {brand}, and I can help you right here on WhatsApp.\n\nWhich country are you planning to study in?",
+    "Assalam-o-Alaikum! 👋 Maaf kijiye aap ki call miss ho gayi. Main {brand} se {bot} hoon, yahin WhatsApp pe madad kar sakta hoon.\n\nAap kis country mein parhna chahte hain?",
+    "السلام علیکم! 👋 معذرت، آپ کی کال رہ گئی۔ میں {brand} سے {bot} ہوں، یہیں واٹس ایپ پر مدد کر سکتا ہوں۔\n\nآپ کس ملک میں تعلیم حاصل کرنا چاہتے ہیں؟"],
+  w_reengage: ["Assalam-o-Alaikum {first}! 👋 This is {bot} from {brand}. You asked us about studying in {country} a while ago, and applications for the {intake} intake are opening now.\n\nWould you like a free 15-min call to check your options?",
+    "Assalam-o-Alaikum {first}! 👋 Main {brand} se {bot} hoon. Aap ne kuch arsa pehle {country} mein parhai ka poocha tha, ab {intake} intake ki applications khul rahi hain.\n\nKya options check karne ke liye free 15-min call rakh dein?",
+    "السلام علیکم {first}! 👋 میں {brand} سے {bot} ہوں۔ آپ نے کچھ عرصہ پہلے {country} میں تعلیم کا پوچھا تھا، اب {intake} انٹیک کی درخواستیں کھل رہی ہیں۔\n\nکیا آپشنز دیکھنے کے لیے مفت 15 منٹ کی کال رکھ دیں؟"],
+  w_ok: ["Great 👍", "Zabardast 👍", "بہترین 👍"],
+  w_reask: ["Sorry, I didn't quite get that 🙏", "Maaf kijiye, samajh nahi aaya 🙏", "معذرت، سمجھ نہیں آیا 🙏"],
+  w_qualified: ["Thank you, {first}! 🙏 Our counsellor will review your profile and guide you on your best {country} options.\n\nLet's book your free 15-min call 📞 Which time suits you? (Pakistan time)",
+    "Shukriya {first}! 🙏 Hamara counsellor aap ki profile review kar ke {country} ke best options guide karega.\n\nAap ki free 15-min call book karte hain 📞 Kaun sa time theek rahega? (Pakistan time)",
+    "شکریہ {first}! 🙏 ہمارا کونسلر آپ کی پروفائل کا جائزہ لے کر {country} کے بہترین آپشنز پر رہنمائی کرے گا۔\n\nآپ کی مفت 15 منٹ کی کال بک کرتے ہیں 📞 کون سا وقت مناسب ہے؟ (پاکستان کا وقت)"],
+  w_moreTimes: ["Here are some more times 👇", "Yeh kuch aur times hain 👇", "یہ کچھ اور اوقات ہیں 👇"],
+  w_pickSlot: ["Please tap one of these times, or reply MORE for other options 👇", "In mein se koi time select karein, ya aur options ke liye MORE likhein 👇", "ان میں سے کوئی وقت منتخب کریں، یا مزید آپشنز کے لیے MORE لکھیں 👇"],
+  w_booked: ["✅ Done! Your free call is booked for {when} (PKT).\nBooking ID: {id}\n\nA counsellor will call you on this number. Reply CHANGE anytime to pick another time.",
+    "✅ Ho gaya! Aap ki free call {when} (PKT) ke liye book hai.\nBooking ID: {id}\n\nCounsellor isi number pe call karega. Time badalna ho to CHANGE likh dein.",
+    "✅ ہو گیا! آپ کی مفت کال {when} (PKT) کے لیے بک ہے۔\nبکنگ آئی ڈی: {id}\n\nکونسلر اسی نمبر پر کال کرے گا۔ وقت بدلنا ہو تو CHANGE لکھ دیں۔"],
+  w_rescheduled: ["🔁 Done! Your call is now {when} (PKT). Booking ID: {id}", "🔁 Ho gaya! Ab aap ki call {when} (PKT) pe hai. Booking ID: {id}", "🔁 ہو گیا! اب آپ کی کال {when} (PKT) پر ہے۔ بکنگ آئی ڈی: {id}"],
+  w_f1: ["Hi {first}, just checking you saw my message 🙂 It only takes a minute.", "Hi {first}, bas check kar raha tha ke aap ne message dekha? 🙂 Sirf 1 minute lagega.", "السلام علیکم {first}، کیا آپ نے میرا پیغام دیکھا؟ 🙂 صرف ایک منٹ لگے گا۔"],
+  w_f2: ["Hi {first}! Universities in {country} often close applications months before the intake. Would you like a free 15-min call with our counsellor this week?",
+    "Hi {first}! {country} ki universities aksar intake se kai mahine pehle applications band kar deti hain. Kya is hafte counsellor ke saath free 15-min call rakh dein?",
+    "السلام علیکم {first}! {country} کی یونیورسٹیاں اکثر انٹیک سے کئی مہینے پہلے درخواستیں بند کر دیتی ہیں۔ کیا اس ہفتے کونسلر کے ساتھ مفت 15 منٹ کی کال رکھ دیں؟"],
+  w_f3: ["Hi {first}, this is my last message 🙏 If you still plan to study abroad, just reply here anytime and I'll book your free call.",
+    "Hi {first}, yeh mera aakhri message hai 🙏 Agar ab bhi bahar parhne ka plan hai to yahan kabhi bhi reply kar dein, main free call book kar doon ga.",
+    "السلام علیکم {first}، یہ میرا آخری پیغام ہے 🙏 اگر اب بھی بیرونِ ملک تعلیم کا ارادہ ہے تو کبھی بھی یہاں جواب دیں، میں مفت کال بک کر دوں گا۔"],
+  w_rem24: ["⏰ Reminder: your free consultation with {brand} is tomorrow, {when} (PKT).\nReply YES to confirm or CHANGE to pick another time.",
+    "⏰ Yaad dihani: {brand} ke saath aap ki free consultation kal {when} (PKT) hai.\nConfirm karne ke liye YES, ya time badalne ke liye CHANGE likhein.",
+    "⏰ یاد دہانی: {brand} کے ساتھ آپ کی مفت مشاورت کل {when} (PKT) ہے۔\nتصدیق کے لیے YES یا وقت بدلنے کے لیے CHANGE لکھیں۔"],
+  w_rem2: ["⏰ Your call with our counsellor starts in about 2 hours ({time} PKT). Please keep your transcripts and passport handy 📄",
+    "⏰ Counsellor ke saath aap ki call taqreeban 2 ghante mein hai ({time} PKT). Transcripts aur passport paas rakhein 📄",
+    "⏰ کونسلر کے ساتھ آپ کی کال تقریباً 2 گھنٹے میں ہے ({time} PKT)۔ ٹرانسکرپٹس اور پاسپورٹ پاس رکھیں 📄"],
+  w_confirmed: ["Great, talk to you then! 👋", "Behtareen, phir baat hoti hai! 👋", "بہترین، پھر بات ہوتی ہے! 👋"],
+  w_noshow: ["Hi {first}, we couldn't reach you for today's call 😊 No worries, want to pick a new time?", "Hi {first}, aaj ki call pe aap se baat nahi ho saki 😊 Koi baat nahi, naya time select karein?", "السلام علیکم {first}، آج کال پر آپ سے بات نہیں ہو سکی 😊 کوئی بات نہیں، نیا وقت منتخب کریں؟"],
+  w_handoff: ["Of course! I've asked a counsellor to call you during office hours ({hours}) 👍", "Zaroor! Main ne counsellor ko bata diya hai, woh office timings ({hours}) mein aap ko call karenge 👍", "ضرور! میں نے کونسلر کو بتا دیا ہے، وہ دفتری اوقات ({hours}) میں آپ کو کال کریں گے 👍"],
+  w_later: ["No problem! I'll check in with you tomorrow. Reply anytime 🙂", "Koi masla nahi! Main kal dobara message karunga. Jab chahein reply kar dein 🙂", "کوئی مسئلہ نہیں! میں کل دوبارہ پیغام کروں گا۔ جب چاہیں جواب دیں 🙂"],
+  w_stop: ["Understood, thanks for letting us know. If your plans change, just message us here 🙂", "Theek hai, batane ka shukriya. Agar plan badle to yahan message kar dein 🙂", "ٹھیک ہے، بتانے کا شکریہ۔ اگر ارادہ بدلے تو یہاں پیغام کر دیں 🙂"],
+  w_afterBook: ["Good question! Your counsellor will go through that on the call 🙂", "Acha sawal! Counsellor call pe yeh detail mein batayega 🙂", "اچھا سوال! کونسلر کال پر یہ تفصیل سے بتائے گا 🙂"],
+  b_yes: ["✅ Yes, go ahead", "✅ Ji, poochein", "✅ جی، پوچھیں"],
+  b_call: ["📞 Call me instead", "📞 Mujhe call karein", "📞 مجھے کال کریں"],
+  b_later: ["Later", "Baad mein", "بعد میں"],
+  b_book: ["📅 Book my free call", "📅 Free call book karein", "📅 مفت کال بک کریں"],
+  b_notNow: ["Not interested", "Interest nahi", "دلچسپی نہیں"],
+  b_interested: ["Yes, interested", "Ji, interested", "جی، دلچسپی ہے"],
+  b_more: ["More times", "Aur time", "مزید اوقات"],
+  b_confirm: ["✅ Yes, confirm", "✅ Ji, confirm", "✅ جی، تصدیق"],
+  b_change: ["🔁 Change time", "🔁 Time badlein", "🔁 وقت تبدیل"],
+});
+const NOWHERE = ["Europe and the UK", "Europe aur UK", "یورپ اور برطانیہ"];   // when the lead hasn't named a country yet
+const STOP_RX = /not interested|not anymore|no thanks|unsubscribe|\bstop\b|interest nahi|nahi chahiye|already enrolled|دلچسپی نہیں|نہیں چاہیے/i;
+const CALL_RX = /call (me|kar|kr|karein|karen|karo)|mujhe call|phone (kar|kr)|ring me|کال کر/i;
+const CHANGE_RX = /change|reschedul|another time|other time|badal|دوسرا وقت|تبدیل/i;
+const CANCEL_RX = /cancel|منسوخ/i;
+const MORE_RX = /\bmore\b|aur time|other times|mazeed|مزید/i;
+
+const SOURCES = {
+  fb: { label: "Facebook lead ad", badge: "f", cls: "bg-[#1877F2] text-white", ref: ["our Facebook ad", "Facebook ad", "فیس بک اشتہار"] },
+  ig: { label: "Instagram", badge: "IG", cls: "bg-gradient-to-br from-[#F58529] via-[#DD2A7B] to-[#8134AF] text-white", ref: ["Instagram", "Instagram", "انسٹاگرام"] },
+  call: { label: "Missed call", badge: "📞", cls: "bg-rose-100" },
+  web: { label: "Website form", badge: "🌐", cls: "bg-sky-100", ref: ["our website", "website", "ویب سائٹ"] },
+  old: { label: "Old lead list", badge: "🗂", cls: "bg-slate-200" },
+};
+const STAGES = {
+  new: ["New", "bg-blue-50 text-blue-700 ring-blue-200"],
+  contacted: ["Contacted", "bg-indigo-50 text-indigo-700 ring-indigo-200"],
+  qualifying: ["Qualifying", "bg-violet-50 text-violet-700 ring-violet-200"],
+  qualified: ["Qualified", "bg-amber-50 text-amber-800 ring-amber-200"],
+  booked: ["Booked", "bg-emerald-50 text-emerald-700 ring-emerald-200"],
+  showed: ["Showed up", "bg-emerald-600 text-white ring-emerald-600"],
+  noshow: ["No-show", "bg-orange-50 text-orange-700 ring-orange-200"],
+  human: ["Needs counsellor", "bg-rose-50 text-rose-700 ring-rose-200"],
+  cold: ["Cold", "bg-slate-100 text-slate-600 ring-slate-200"],
+};
+const PIPELINE = [["New / contacted", ["new", "contacted"]], ["Qualifying", ["qualifying"]], ["Qualified", ["qualified"]], ["Booked", ["booked"]], ["Showed up", ["showed"]], ["No-show", ["noshow"]], ["Needs counsellor", ["human"]], ["Cold", ["cold"]]];
+const StagePill = ({ s }) => <span className={"inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 whitespace-nowrap " + STAGES[s][1]}>{STAGES[s][0]}</span>;
+const SourceBadge = ({ src, size = 18 }) => (
+  <span title={SOURCES[src].label} style={{ width: size, height: size, fontSize: size * 0.5 }} className={"inline-grid place-items-center rounded-md font-bold shrink-0 ring-2 ring-white " + SOURCES[src].cls}>{SOURCES[src].badge}</span>
+);
+
+// Simulated students for the demo. ans: what they reply at each step (text, a button index,
+// or "btn:<value>"; arrays are used in order). ghost = follow-ups needed before they reply.
+const PERSONAS = [
+  { key: "ali", src: "fb", name: "Ali Raza", phone: "+923214455667", country: "Italy",
+    ans: { intro: "ji bilkul, poochein", education: "BS computer science kiya hai", grades: "3.2 cgpa", english: "IELTS diya hai, 6.5 bands", intake: "February wala intake", budget: "25 lakh tak", slot: [0, 0], confirm: "btn:confirm" } },
+  { key: "hira", src: "ig", name: "Hira Batool", phone: "+923335566778", country: "Germany",
+    ans: { intro: "Yes please! Do I need IELTS for Germany?", education: "Bachelor's in Mechanical Engineering", grades: "3.4 out of 4", english: 2, intake: "April next year", budget: 2, slot: [1, 0], confirm: "btn:confirm" } },
+  { key: "usman", src: "call", name: "Usman Tariq", phone: "+923007788990", noShow: true,
+    ans: { country: "UK jana hai", name: "Usman Tariq", education: "Masters kiya hai, MBA", grades: "68%", english: "PTE 61", intake: 0, budget: "50 lakh", slot: [2, 0, 0], confirm: "btn:confirm" } },
+  { key: "bilal", src: "fb", name: "Bilal Ahmed", phone: "+923451239876", country: "UK",
+    ans: { intro: "Mujhe call kar dein please, detail mein baat karni hai" } },
+  { key: "hamza", src: "fb", name: "Hamza Ali", phone: "+923128899001", country: "Germany", ghost: 99, ans: {} },
+  { key: "maryam", src: "web", name: "Maryam Iqbal", phone: "+923019988776", country: "Italy",
+    ans: { intro: ["Busy right now, maybe later", "Yes, now is good"], education: "FSc pre-medical, intermediate", grades: "78%", english: 0, englishScore: "6", intake: 0, budget: 1, slot: [2, 0], confirm: "btn:change" } },
+  { key: "ayesha", src: "web", name: "Ayesha Khan", phone: "+923365544110", country: "France", ghost: 2,
+    ans: { intro: "Sorry, I was busy this week. Yes let's do it", education: 1, grades: "3.6/4", english: "Duolingo 120", intake: "September 2027", budget: 3, slot: [0, 0], confirm: "btn:confirm" } },
+  { key: "sana", src: "ig", name: "Sana Javed", phone: "+923041122334", country: "Italy",
+    ans: { intro: "جی ضرور", education: "ایف ایس سی پری میڈیکل", grades: "85 فیصد", english: "ابھی نہیں", intake: "فروری", budget: "20 لاکھ", slot: [1, 0], confirm: "btn:confirm" } },
+];
+const OLD_LEADS_SAMPLE = `Name,Phone,Country
+Zara Ahmed,0321-1234001,Italy
+Faisal Mehmood,0300-1234002,Germany
+Nimra Shah,0345-1234003,UK
+Danish Iqbal,0312-1234004,Italy
+Kiran Fatima,0333-1234005,France
+Saad Hussain,0302-1234006,Germany
+Mehwish Ali,0321-1234007,UK
+Taimoor Khan,0345-1234008,Italy`;
+const OLD_PERSONAS = [
+  { key: "zara", phone: "+923211234001", ans: { reengage: "Yes! I'm still interested", education: 1, grades: "3.1", english: "IELTS 6", intake: 0, budget: 1, slot: [1, 0], confirm: "btn:confirm" } },
+  { key: "danish", phone: "+923121234004", ans: { reengage: "haan ji, abhi bhi plan hai", education: "BBA kiya hai", grades: "2.9", english: "nahi diya abhi", intake: 0, budget: "18 lakh", slot: [0, 0], confirm: "btn:confirm" } },
+  { key: "kiran", phone: "+923331234005", ans: { reengage: "Not anymore, I've already enrolled. Thanks!" } },
+];
+const EXTRA_NAMES = ["Kamran Shah", "Noor Fatima", "Zeeshan Akhtar", "Iqra Aslam", "Waleed Khan", "Areeba Nadeem", "Fahad Butt", "Laiba Imran"];
+const personaOf = L => PERSONAS.find(p => p.key === L.persona) || OLD_PERSONAS.find(p => p.key === L.persona);
+
+const pktClock = ms => { const d = new Date(ms + OFF); return fmtTime(`${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`); };
+const dayRel = (date, now) => { const t = pktYmdOfEpoch(now); return date === t ? "Today" : date === addDays(t, 1) ? "Tomorrow" : fmtDay(date).replace(",", ""); };
+const relTime = (ms, now) => { const d = Math.round((ms - now) / 60000), a = Math.abs(d); const s = a < 60 ? `${a} min` : a < 1440 ? `${Math.round(a / 60)} h` : `${Math.round(a / 1440)} d`; return d >= 0 ? `in ${s}` : `${s} ago`; };
+const tidy = s => s.replace(/ +([,!.?،])/g, "$1");
+const leadName = L => L.data.name || fmtPhone(L.phone);
+const initialsOf = L => L.data.name ? L.data.name.split(" ").map(w => w[0]).slice(0, 2).join("") : "#";
+
+// a spread of free call slots (late morning and afternoon on each working day), at least 2 h from now
+function offerSlots(appts, from, skip = 0) {
+  const out = [];
+  let d = pktYmdOfEpoch(from);
+  for (let i = 0; i < C.hours.daysAhead + 3; i++, d = addDays(d, 1)) {
+    if (!isWorkingDay(d)) continue;
+    const free = allSlotTimes().filter(t => slotEpoch(d, t) > from + 2 * HOUR && !isBooked(appts, d, t));
+    for (const pref of ["11:00", "15:00"]) {
+      const t = free.find(x => x >= pref);
+      if (t && !out.some(o => o.date === d && o.time === t)) out.push({ date: d, time: t });
+    }
+  }
+  return out.slice(skip, skip + 3);
+}
+
+const loadSetter = () => {
+  try {
+    const v = JSON.parse(localStorage.getItem(SETTER_KEY));
+    if (v && Array.isArray(v.leads)) {
+      // replies that were still "being typed" when the page closed get another go
+      v.leads.forEach(l => { if (l.autoPending && l.autoKey) l.autoUsed[l.autoKey]--; l.typing = null; l.busy = false; l.autoPending = false; });
+      return v;
+    }
+  } catch (e) {}
+  return { leads: [], offset: 0, auto: true };
+};
+const saveSetter = v => { try { localStorage.setItem(SETTER_KEY, JSON.stringify(v)); } catch (e) {} };
+
+function parseOldLeads(text) {
+  const rows = [], bad = [];
+  text.split(/\r?\n/).map(l => l.trim()).filter(Boolean).forEach(line => {
+    const [name = "", phone = "", country = ""] = line.split(/[,;\t]/).map(x => x.trim().replace(/^"|"$/g, ""));
+    if (/^name$/i.test(name)) return;
+    const p = normPhone(phone);
+    if (!p || !name) { bad.push(line); return; }
+    const m = matchCountry(country);
+    rows.push({ name: titleCase(name), phone: p, country: m ? m.country : null, countryOther: m?.other || null });
+  });
+  return { rows, bad };
+}
+
+function SetterView({ appts, addAppt, updateAppt, onBook, onAdmin }) {
+  const store = useRef(null);
+  if (!store.current) store.current = loadSetter();
+  const [, render] = useState(0);
+  const commit = () => { render(n => n + 1); saveSetter(store.current); };
+  const apptsRef = useRef(appts); apptsRef.current = appts;
+  const queues = useRef({});
+  const timers = useRef(new Set());
+  const [selId, setSelId] = useState(() => store.current.leads[0]?.id || null);
+  const selRef = useRef(selId); selRef.current = selId;
+  const [tab, setTab] = useState("inbox");
+  const [menu, setMenu] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [typeAs, setTypeAs] = useState("student");
+  const [oldText, setOldText] = useState("");
+  const [oldNote, setOldNote] = useState("");
+  const endRef = useRef(null);
+
+  const S = store.current;
+  const now = () => Date.now() + store.current.offset;
+  const alive = L => store.current.leads.includes(L);
+  const later = (ms, fn) => { const t = setTimeout(() => { timers.current.delete(t); fn(); }, ms); timers.current.add(t); };
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+
+  const li = L => L.lang === "ru" ? 1 : L.lang === "ur" ? 2 : 0;
+  const T = (L, k, v = {}) => {
+    const D = L.data;
+    const country = D.country === "Other" ? D.countryOther || NOWHERE[li(L)] : D.country || NOWHERE[li(L)];
+    return tidy(tr(k, L.lang, { first: (D.name || "").split(" ")[0], country, ...v }));
+  };
+  const btn = (L, k, value) => ({ label: T(L, k), value });
+  const log = (L, text) => L.log.push({ at: now(), text });
+
+  const push = (L, m) => {
+    const msg = { id: uid(), at: now(), ...m };
+    L.msgs.push(msg); L.lastAt = msg.at;
+    if (m.from === "bot" && L.firstReplyMs == null) { L.firstReplyMs = Date.now() - L.createdReal; log(L, `AI replied in ${(L.firstReplyMs / 1000).toFixed(1)} s`); }
+    commit();
+  };
+
+  // one queue per lead so its messages always come out in order
+  const chain = (L, fn) => {
+    queues.current[L.id] = (queues.current[L.id] || Promise.resolve()).then(() => alive(L) && fn()).catch(e => console.error(e));
+    return queues.current[L.id];
+  };
+  const say = (L, items, opts = {}) => chain(L, async () => {
+    L.busy = true;
+    for (const it of [].concat(items).filter(Boolean)) {
+      const m = typeof it === "string" ? { text: it } : it;
+      L.typing = "bot"; commit();
+      await sleep(Math.min(1600, 500 + m.text.length * 6));
+      if (!alive(L)) return;
+      L.typing = null;
+      push(L, { from: "bot", ...m });
+      await sleep(120);
+    }
+    L.busy = false; commit();
+    afterBotTurn(L, opts);
+  });
+
+  const waitingOnLead = L => !L.aiPaused && L.stage !== "cold" && L.step !== "done";
+  const afterBotTurn = (L, opts = {}) => {
+    if (!opts.noFollowUp && waitingOnLead(L) && L.fu < FOLLOW_UPS.length && !L.queue.some(q => q.kind === "fu")) {
+      L.queue.push({ kind: "fu", at: now() + FOLLOW_UPS[L.fu] }); commit();
+    }
+    autoReply(L);
+  };
+
+  /* ---------- simulated student ---------- */
+  const autoReply = L => {
+    const p = personaOf(L);
+    if (!L.auto || !p || L.aiPaused || L.autoPending || L.snooze) return;
+    if (!L.msgs.some(m => m.from === "lead") && L.fu < (p.ghost || 0)) return;   // ghosting until enough follow-ups
+    const key = L.step, list = [].concat(p.ans[key] ?? []), used = L.autoUsed[key] || 0;
+    if (used >= list.length) return;
+    const ans = list[used];
+    L.autoUsed[key] = used + 1; L.autoPending = true; L.autoKey = key;
+    later(1300 + Math.random() * 1200, () => {
+      if (!alive(L)) return;
+      L.typing = "lead"; commit();
+      later(800 + Math.min(1600, String(ans).length * 25), () => {
+        if (!alive(L)) return;
+        L.typing = null; L.autoPending = false;
+        if (typeof ans === "number" || String(ans).startsWith("btn:")) {
+          const last = [...L.msgs].reverse().find(m => m.from === "bot" && m.buttons);
+          const b = typeof ans === "number" ? last?.buttons[ans] : last?.buttons.find(x => x.value === ans.slice(4));
+          return b ? tap(L, b, true) : commit();
+        }
+        studentSays(L, ans, true);
+      });
+    });
+  };
+
+  const studentSays = (L, text, auto) => {
+    if (!auto) L.auto = false;
+    push(L, { from: "lead", text });
+    handleReply(L, { text });
+  };
+  const tap = (L, b, auto) => {
+    if (!auto) L.auto = false;
+    push(L, { from: "lead", text: b.label });
+    if (!b.value) return handleReply(L, { text: b.label });
+    if (b.value.startsWith("txt:")) return handleReply(L, { text: b.value.slice(4) });
+    handleReply(L, { btn: b.value });
+  };
+
+  /* ---------- qualifying questions ---------- */
+  const need = L => {
+    const D = L.data;
+    if (!D.country) return "country";
+    if (!D.name) return "name";
+    if (!D.education) return "education";
+    if (!D.grades) return "grades";
+    if (L.pendingTest) return "englishScore";
+    if (!D.english) return "english";
+    if (!D.intake) return "intake";
+    if (!D.budget) return "budget";
+    return null;
+  };
+  const question = (L, step) => {
+    switch (step) {
+      case "country": return { text: T(L, "askCountry"), buttons: C.countries.map(c => ({ label: c.name })) };
+      case "name": return { text: T(L, "askName") };
+      case "education": return { text: T(L, "askEducation"), buttons: C.educationLevels.map(e => ({ label: e })) };
+      case "grades": return { text: T(L, "askGrades") };
+      case "english": return { text: T(L, "askEnglish"), buttons: [{ label: "IELTS" }, { label: "PTE" }, { label: T(L, "c_notyet"), value: "txt:not yet" }] };
+      case "englishScore": return { text: T(L, "askScore", { test: L.pendingTest }) };
+      case "intake": return { text: T(L, "askIntake"), buttons: [...upcomingIntakes(3).map(i => ({ label: i.label })), { label: T(L, "c_notsure"), value: "txt:not sure" }] };
+      case "budget": return { text: T(L, "askBudget"), buttons: C.budgetRanges.map(b => ({ label: b.label, value: `txt:${b.lakh} lakh` })) };
+    }
+  };
+  const askNext = (L, pre = []) => {
+    const step = need(L);
+    if (!step) {
+      L.stage = "qualified";
+      L.score = scoreLead(leadFields(L.data)).level;
+      log(L, `Qualified · ${L.score} lead`);
+      return offer(L, 0, [...pre, T(L, "w_qualified")]);
+    }
+    L.step = step;
+    return say(L, [...pre, question(L, step)]);
+  };
+  const parseFor = (step, text, strict) => {
+    switch (step) {
+      case "country": { const m = matchCountry(text); return m && (m.country !== "Other" || m.other) ? m : null; }
+      case "name": return extractName(text);
+      case "education": return parseEducation(text, strict);
+      case "grades": return parseGrades(text);
+      case "english": return parseEnglish(text);
+      case "englishScore": { if (/don'?t remember|yaad nahi|یاد نہیں/i.test(text)) return "—"; const m = text.match(/(\d+(?:\.\d+)?)/); return m ? m[1] : null; }
+      case "intake": return parseIntake(text);
+      case "budget": return parseBudget(text, strict);
+      default: return null;
+    }
+  };
+  const accept = (L, step, v) => {
+    const D = L.data, pre = [];
+    switch (step) {
+      case "country": D.country = v.country; D.countryOther = v.other || null; break;
+      case "name": D.name = v; pre.push(T(L, "niceMeet", { first: v.split(" ")[0] })); break;
+      case "education": D.education = v; break;
+      case "grades": D.grades = v; pre.push(T(L, "gotIt")); break;
+      case "english":
+        if (v.none) { D.english = { label: "Not yet", test: "None", score: null, done: false }; pre.push(T(L, "englishNone")); }
+        else if (v.score == null) L.pendingTest = v.test;
+        else { D.english = { label: `${v.test} ${v.score}`, test: v.test, score: v.score, done: true }; pre.push(T(L, "niceScore")); }
+        break;
+      case "englishScore":
+        D.english = { label: v === "—" ? `${L.pendingTest} (score n/a)` : `${L.pendingTest} ${v}`, test: L.pendingTest, score: v === "—" ? null : v, done: true };
+        L.pendingTest = null; pre.push(T(L, "niceScore")); break;
+      case "intake": D.intake = v; break;
+      case "budget": D.budget = v; break;
+    }
+    if (L.stage === "contacted") L.stage = "qualifying";
+    return askNext(L, pre);
+  };
+
+  /* ---------- booking ---------- */
+  const offer = (L, skip, pre) => {
+    let opts = offerSlots(apptsRef.current, now(), skip);
+    if (!opts.length && skip) { skip = 0; opts = offerSlots(apptsRef.current, now(), 0); }
+    if (!opts.length) return handoff(L, "No free slots in the next week");
+    L.step = "slot"; L.offerSkip = skip; L.offered = opts;
+    const buttons = [...opts.map(o => ({ label: `${dayRel(o.date, now())} · ${fmtTime(o.time)}`, value: `slot:${o.date}|${o.time}` })), btn(L, "b_more", "more")];
+    const items = [...pre];
+    const text = items.pop();
+    return say(L, [...items, { text, buttons }]);
+  };
+  const parseSlotText = (L, text) => {
+    const from = now(), days = [];
+    let d = pktYmdOfEpoch(from);
+    for (let i = 0; i < C.hours.daysAhead; i++, d = addDays(d, 1)) {
+      const slots = isWorkingDay(d) ? allSlotTimes().filter(t => slotEpoch(d, t) > from + 2 * HOUR && !isBooked(apptsRef.current, d, t)) : [];
+      if (slots.length) days.push({ date: d, slots });
+    }
+    const day = parseDay(text, days);
+    if (day) { const t = parseTime(text, days.find(x => x.date === day).slots); return t ? { date: day, time: t } : null; }
+    return (L.offered || []).find(o => parseTime(text, [o.time])) || null;
+  };
+  const book = (L, date, time) => {
+    const list = apptsRef.current;
+    if (isBooked(list, date, time, L.apptId) || slotEpoch(date, time) <= now()) return offer(L, 0, [T(L, "slotTaken")]);
+    const when = `${fmtDay(date)}, ${fmtTime(time)}`;
+    const existing = L.apptId && list.find(a => a.id === L.apptId);
+    if (existing) {
+      updateAppt(L.apptId, { date, time, status: "New", rescheduledAt: Date.now() });
+      apptsRef.current = list.map(a => a.id === L.apptId ? { ...a, date, time, status: "New" } : a);
+      log(L, `Moved ${L.apptId} to ${fmtDay(date)}, ${fmtTime(time)}`);
+    } else {
+      const appt = { id: nextBookingId(list), createdAt: Date.now(), status: "New", lang: L.lang, source: "WhatsApp", ...leadFields({ ...L.data, phone: L.phone, session: "discovery", date, time }) };
+      addAppt(appt);
+      apptsRef.current = [appt, ...list];   // so a second booking in the same tick gets the next ID
+      L.apptId = appt.id;
+      log(L, `Booked ${appt.id} · ${fmtDay(date)}, ${fmtTime(time)}`);
+    }
+    L.stage = "booked"; L.step = "done"; L.date = date; L.time = time;
+    const at = slotEpoch(date, time);
+    L.queue = [["rem24", at - DAY], ["rem2", at - 2 * HOUR], ["attend", at + 20 * 60000]].filter(([, t]) => t > now()).map(([kind, t]) => ({ kind, at: t }));
+    return say(L, T(L, existing ? "w_rescheduled" : "w_booked", { when, id: L.apptId }), { noFollowUp: true });
+  };
+
+  const handoff = (L, reason, silent) => {
+    L.stage = "human"; L.aiPaused = true; L.handoffReason = reason;
+    L.queue = L.queue.filter(q => q.kind !== "fu");
+    log(L, `Handed to a counsellor: ${reason}`);
+    if (silent) return commit();
+    return say(L, T(L, "w_handoff"), { noFollowUp: true });
+  };
+  const resumeAI = L => {
+    L.aiPaused = false; L.handoffReason = null;
+    log(L, "AI resumed");
+    if (L.apptId) { L.stage = "booked"; return commit(); }
+    L.stage = need(L) ? (L.msgs.some(m => m.from === "lead") ? "qualifying" : "contacted") : "qualified";
+    return askNext(L, [T(L, "w_ok")]);
+  };
+  const setAttendance = (L, showed) => {
+    L.attendDue = false;
+    if (showed) { L.stage = "showed"; updateAppt(L.apptId, { status: "Completed" }); log(L, "Showed up for the call ✓"); return commit(); }
+    L.stage = "noshow"; L.missedOnce = true; updateAppt(L.apptId, { status: "No-show" }); log(L, "No-show: AI offered new times");
+    return offer(L, 0, [T(L, "w_noshow")]);
+  };
+
+  /* ---------- the student replied ---------- */
+  const handleReply = (L, { text = "", btn = null }) => {
+    if (text) L.lang = detectLang(text, L.lang);
+    L.queue = L.queue.filter(q => q.kind !== "fu"); L.fu = 0; L.snooze = false;
+    if (L.aiPaused) return commit();
+    const t = text.toLowerCase().trim();
+    if (L.stage === "cold") {
+      if (L.step === "done" && !L.apptId) L.step = "intro";
+      L.stage = L.apptId ? "booked" : L.step === "slot" ? "qualified" : ["intro", "reengage"].includes(L.step) ? "contacted" : "qualifying";
+      log(L, "Replied again: back in the pipeline");
+    }
+    const opening = ["intro", "reengage"].includes(L.step);
+    if (btn === "stop" || STOP_RX.test(t) || (opening && /^(no|nope|nahi|nahin|نہیں)\b/i.test(t))) {
+      L.stage = "cold"; L.step = "done"; L.coldReason = "Not interested"; L.queue = [];
+      log(L, "Not interested: marked cold");
+      return say(L, T(L, "w_stop"));
+    }
+    if (btn === "call" || CALL_RX.test(t)) return handoff(L, "Asked for a call back");
+    const intent = text ? detectIntent(text) : null;
+    if (btn === "later" || intent?.type === "later") {
+      L.fu = 1; L.snooze = true;
+      log(L, "Asked to talk later: follow-up tomorrow");
+      return say(L, T(L, "w_later"));
+    }
+    let faq = null;
+    if (intent?.type === "faq") { faq = faqAnswer(intent.faq, L.lang); L.asked = [...new Set([...(L.asked || []), intent.faq.q])]; }
+
+    if (L.step === "done" || L.step === "confirm") {
+      if (!L.apptId) return say(L, faq || T(L, "anythingElse"), { noFollowUp: true });
+      if (btn === "confirm" || (L.step === "confirm" && YES_RX.test(t))) {
+        L.step = "done"; updateAppt(L.apptId, { status: "Confirmed" }); log(L, "Confirmed the appointment ✓");
+        return say(L, T(L, "w_confirmed"));
+      }
+      if (btn === "change" || CHANGE_RX.test(t)) { log(L, "Asked to reschedule"); return offer(L, 0, [T(L, "rescheduleStart")]); }
+      if (CANCEL_RX.test(t)) {
+        L.step = "done"; L.stage = "cold"; L.coldReason = "Cancelled the call"; L.queue = [];
+        updateAppt(L.apptId, { status: "Cancelled" }); log(L, `Cancelled ${L.apptId}`);
+        return say(L, T(L, "cancelled", { id: L.apptId }));
+      }
+      return say(L, faq || T(L, "w_afterBook"), { noFollowUp: true });
+    }
+    if (L.step === "slot") {
+      if (btn?.startsWith("slot:")) { const [d, tm] = btn.slice(5).split("|"); return book(L, d, tm); }
+      if (btn === "more" || MORE_RX.test(t)) return offer(L, (L.offerSkip || 0) + 3, [T(L, "w_moreTimes")]);
+      const pick = text && parseSlotText(L, text);
+      if (pick) return book(L, pick.date, pick.time);
+      if (faq) return offer(L, L.offerSkip || 0, [faq, T(L, "w_pickSlot")]);
+      if (btn === "book" || YES_RX.test(t)) return offer(L, L.offerSkip || 0, [T(L, "w_pickSlot")]);
+      return offer(L, L.offerSkip || 0, [T(L, "w_reask"), T(L, "w_pickSlot")]);
+    }
+    if (opening) {
+      L.stage = "qualifying";
+      log(L, L.step === "reengage" ? "Old lead re-engaged ✓" : "Replied: qualifying");
+      return askNext(L, [faq || T(L, "w_ok")]);
+    }
+    // a qualifying question is open
+    const step = L.step, q = isQuestion(text);
+    const strict = !q && text && parseFor(step, text, true);
+    if (strict) return accept(L, step, strict);
+    if (faq) return askNext(L, [faq]);
+    if (btn === "book" || YES_RX.test(t)) return askNext(L, [T(L, "w_ok")]);
+    const loose = !q && text && parseFor(step, text, false);
+    if (loose) return accept(L, step, loose);
+    return askNext(L, [T(L, "w_reask")]);
+  };
+
+  /* ---------- scheduled automation ---------- */
+  const fire = (L, q) => {
+    if (q.kind === "fu") {
+      const n = ++L.fu;
+      L.fuSent = (L.fuSent || 0) + 1; L.snooze = false;
+      const tag = `Auto follow-up ${n}${n > 1 ? " · approved template" : ""}`;
+      log(L, `Follow-up ${n} sent (${["no reply for 1 hour", "no reply for 1 day", "no reply for 3 more days"][n - 1]})`);
+      if (n === 1) return say(L, { text: T(L, "w_f1"), tag });
+      if (n === 2) return say(L, { text: T(L, "w_f2"), tag, buttons: [btn(L, "b_book", "book"), btn(L, "b_notNow", "stop")] });
+      L.stage = "cold"; L.coldReason = "No reply after 3 follow-ups";
+      log(L, "Marked cold: no reply after 3 follow-ups");
+      return say(L, { text: T(L, "w_f3"), tag });
+    }
+    const when = `${fmtDay(L.date)}, ${fmtTime(L.time)}`;
+    if (q.kind === "rem24") {
+      L.step = "confirm"; L.remSent = (L.remSent || 0) + 1; log(L, "Reminder sent (24 h before)");
+      return say(L, { text: T(L, "w_rem24", { when }), tag: "Reminder · approved template", buttons: [btn(L, "b_confirm", "confirm"), btn(L, "b_change", "change")] }, { noFollowUp: true });
+    }
+    if (q.kind === "rem2") {
+      L.remSent = (L.remSent || 0) + 1; log(L, "Reminder sent (2 h before)");
+      return say(L, { text: T(L, "w_rem2", { time: fmtTime(L.time) }), tag: "Reminder" }, { noFollowUp: true });
+    }
+    if (q.kind === "attend") {
+      L.attendDue = true; log(L, "Call time passed: mark attendance");
+      commit();
+      if (L.auto && personaOf(L)) later(1500, () => alive(L) && L.attendDue && setAttendance(L, !(personaOf(L).noShow && !L.missedOnce)));
+    }
+  };
+
+  useEffect(() => {
+    const i = setInterval(() => {
+      const t = now();
+      for (const L of store.current.leads) {
+        if (L.busy || L.typing || L.autoPending || !L.queue.length) continue;
+        const due = L.queue.filter(q => q.at <= t).sort((a, b) => a.at - b.at)[0];
+        if (!due) continue;
+        L.queue = L.queue.filter(q => q !== due);
+        fire(L, due);
+      }
+      render(n => n + 1);   // keeps the clock and "in 3 h" labels fresh
+    }, 1000);
+    // pick up simulated replies that were cut off by a reload
+    store.current.leads.forEach(L => { const last = L.msgs[L.msgs.length - 1]; if (last?.from === "bot") autoReply(L); });
+    return () => clearInterval(i);
+  }, []);
+
+  /* ---------- new leads ---------- */
+  const spawn = (src, o = {}) => {
+    const p = o.persona;
+    const name = o.name || p?.name || EXTRA_NAMES[store.current.leads.length % EXTRA_NAMES.length];
+    const L = {
+      id: uid(), persona: p?.key || null, auto: !!p && (o.auto ?? store.current.auto), source: src,
+      phone: o.phone || p?.phone || "+92300" + String(1000000 + Math.floor(Math.random() * 8999999)),
+      data: { name: src === "call" ? null : name, country: src === "call" ? null : o.country || p?.country || "Italy", countryOther: o.countryOther || null },
+      lang: "en", stage: "new", step: src === "call" ? "country" : src === "old" ? "reengage" : "intro",
+      msgs: [], queue: [], log: [], fu: 0, autoUsed: {}, createdAt: now(), createdReal: Date.now(), lastAt: now(),
+    };
+    store.current.leads.unshift(L);
+    log(L, `New lead from ${SOURCES[src].label}`);
+    if (src === "call") push(L, { from: "sys", text: `📞 Missed voice call · ${pktClock(now())}` });
+    commit();
+    if (!selRef.current || !store.current.leads.some(x => x.id === selRef.current)) setSelId(L.id);
+    later(1200, () => alive(L) && greet(L));
+    return L;
+  };
+  const greet = L => {
+    L.stage = "contacted";
+    if (L.source === "call") return say(L, { text: T(L, "w_introMissed"), buttons: C.countries.map(c => ({ label: c.name })) });
+    if (L.source === "old") return say(L, { text: T(L, "w_reengage", { intake: upcomingIntakes(1)[0].label }), tag: "Re-engagement · approved template", buttons: [btn(L, "b_interested", "yes"), btn(L, "b_notNow", "stop")] });
+    return say(L, { text: T(L, "w_intro", { src: SOURCES[L.source].ref[li(L)] }), buttons: [btn(L, "b_yes", "yes"), btn(L, "b_call", "call"), btn(L, "b_later", "later")] });
+  };
+  const newLead = src => {
+    setMenu(false);
+    const used = new Set(store.current.leads.map(l => l.persona));
+    spawn(src, { persona: PERSONAS.find(p => p.src === src && !used.has(p.key)) });
+  };
+  const runDemo = () => {
+    const used = new Set(store.current.leads.map(l => l.persona));
+    PERSONAS.filter(p => !used.has(p.key)).forEach((p, i) => later(i * 4500, () => spawn(p.src, { persona: p, auto: true })));
+  };
+  const sendOld = () => {
+    const { rows, bad } = parseOldLeads(oldText);
+    if (!rows.length) { setOldNote("No valid rows found. Use: Name, Phone (03XXXXXXXXX), Country"); return; }
+    rows.forEach((r, i) => later(i * 900, () => spawn("old", { ...r, persona: OLD_PERSONAS.find(p => p.phone === r.phone), auto: true })));
+    setOldNote(`Sending to ${rows.length} old lead${rows.length === 1 ? "" : "s"}${bad.length ? ` · ${bad.length} row${bad.length === 1 ? "" : "s"} skipped (bad phone or name)` : ""}. Watch them in the Inbox and Pipeline.`);
+    setOldText("");
+  };
+  const readCsv = e => {
+    const f = e.target.files?.[0]; if (!f) return;
+    const r = new FileReader(); r.onload = () => setOldText(String(r.result)); r.readAsText(f); e.target.value = "";
+  };
+
+  /* ---------- clock ---------- */
+  const skip = ms => { store.current.offset += ms; commit(); };
+  const nextEvent = () => {
+    const ats = store.current.leads.flatMap(l => l.queue.map(q => q.at));
+    if (ats.length) skip(Math.max(0, Math.min(...ats) - now()) + 1000);
+  };
+  const reset = () => {
+    if (!confirm("Clear all setter leads and conversations? Bookings already made stay in the admin dashboard.")) return;
+    timers.current.forEach(clearTimeout); timers.current.clear(); queues.current = {};
+    store.current = { leads: [], offset: 0, auto: store.current.auto };
+    setSelId(null); commit();
+  };
+
+  /* ---------- view ---------- */
+  const nowMs = now();
+  const leads = [...S.leads].sort((a, b) => b.lastAt - a.lastAt);
+  const L = S.leads.find(l => l.id === selId);
+  const lastBtnMsg = L && [...L.msgs].reverse().find(m => m.from !== "sys");
+  useEffect(() => { endRef.current?.scrollIntoView({ block: "end" }); }, [L?.msgs.length, L?.typing, selId]);
+
+  const replied = S.leads.filter(l => l.firstReplyMs != null);
+  const avgReply = replied.length ? (replied.reduce((s, l) => s + l.firstReplyMs, 0) / replied.length / 1000).toFixed(1) + " s" : "—";
+  const booked = S.leads.filter(l => l.apptId && l.coldReason !== "Cancelled the call").length;
+  const followUps = S.leads.reduce((s, l) => s + (l.fuSent || 0), 0), reminders = S.leads.reduce((s, l) => s + (l.remSent || 0), 0);
+  const needHuman = S.leads.filter(l => l.stage === "human").length;
+
+  const send = e => {
+    e.preventDefault();
+    const text = draft.trim(); if (!text || !L) return;
+    setDraft("");
+    if (L.aiPaused && typeAs === "counsellor") { push(L, { from: "agent", text }); log(L, "Counsellor replied"); return; }
+    studentSays(L, text, false);
+  };
+  const summary = L => {
+    const D = L.data, sc = L.score ? scoreLead(leadFields(D)) : null;
+    return [
+      `${D.name || "Name not given"} · ${fmtPhone(L.phone)} · via ${SOURCES[L.source].label}`,
+      `Country: ${D.country ? countryLabel(D) : "—"}`,
+      `Education: ${D.education || "—"} · ${D.grades?.label || "—"}`,
+      `English: ${D.english?.label || "—"} · Intake: ${D.intake?.label || "—"} · Budget: ${D.budget?.label || "—"}`,
+      sc && `Lead score: ${sc.level} (${sc.pts}/4 criteria)`,
+      L.apptId && `Booked: ${L.apptId} · ${fmtDay(L.date)}, ${fmtTime(L.time)} PKT`,
+      L.asked?.length && `Asked about: ${L.asked.join("; ")}`,
+      L.handoffReason && `Note: ${L.handoffReason}`,
+      `Language: ${{ en: "English", ru: "Roman Urdu", ur: "Urdu" }[L.lang]}`,
+    ].filter(Boolean).join("\n");
+  };
+  const copy = text => { try { navigator.clipboard.writeText(text); } catch (e) {} };
+  const QUEUE_LABEL = { fu: n => `Follow-up ${n + 1}`, rem24: () => "Reminder (24 h before)", rem2: () => "Reminder (2 h before)", attend: () => "Check attendance" };
+  const hbtn = "rounded-full ring-1 ring-white/20 hover:bg-white/10 px-3 py-1.5 text-xs font-semibold";
+
+  return (
+    <div className="min-h-screen bg-[#F4F2EC]">
+      <header className="hero-bg text-white">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3"><Logo light /><span className="text-xs rounded-full bg-[#25D366]/20 text-[#7CF0A8] ring-1 ring-[#25D366]/40 px-2.5 py-1 font-semibold flex items-center gap-1.5"><Icon name="wa" size={13} /> AI Appointment Setter</span></div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="rounded-full bg-black/20 ring-1 ring-white/15 px-3 py-1.5 text-xs flex items-center gap-1.5" title="Demo clock: fast-forward to see follow-ups and reminders">
+              <Icon name="clock" size={13} className="text-gold" /> {fmtDay(pktYmdOfEpoch(nowMs))} · {pktClock(nowMs)} PKT{S.offset > 0 && <span className="text-gold font-semibold"> · simulated</span>}
+            </div>
+            <button onClick={() => skip(HOUR)} className={hbtn}>+1 hour</button>
+            <button onClick={() => skip(DAY)} className={hbtn}>+1 day</button>
+            <button onClick={nextEvent} className={hbtn} title="Jump to the next scheduled follow-up or reminder">⏭ Next event</button>
+            <button onClick={onBook} className={hbtn + " hidden sm:inline-flex"}>Booking link</button>
+            <button onClick={onAdmin} className="rounded-full bg-white text-navy px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5"><Icon name="lock" size={13} /> Admin</button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-5">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          <Stat icon="users" label="Leads" value={S.leads.length} sub={`${S.leads.filter(l => pktYmdOfEpoch(l.createdAt) === pktYmdOfEpoch(nowMs)).length} today`} />
+          <Stat icon="clock" label="Avg first reply" value={avgReply} sub="From lead arriving to first WhatsApp" accent />
+          <Stat icon="calendar" label="Calls booked" value={booked} sub={`${S.leads.length ? Math.round(booked / S.leads.length * 100) : 0}% of leads`} />
+          <Stat icon="refresh" label="Auto messages" value={followUps + reminders} sub={`${followUps} follow-ups · ${reminders} reminders`} />
+          <Stat icon="phone" label="Need a counsellor" value={needHuman} sub="Asked for a call or AI paused" />
+        </div>
+
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+          <div className="inline-flex rounded-xl bg-white ring-1 ring-slate-200 p-1">
+            {[["inbox", "chat", "Inbox"], ["pipeline", "list", "Pipeline"], ["old", "refresh", "Re-engage old leads"]].map(([k, i, l]) => (
+              <button key={k} onClick={() => setTab(k)} className={"px-3.5 py-2 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition " + (tab === k ? "bg-navy text-white shadow" : "text-slate-600 hover:text-navy")}><Icon name={i} size={15} />{l}</button>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-2 text-[13px] text-slate-600 rounded-xl bg-white ring-1 ring-slate-200 px-3 py-2 cursor-pointer" title="Simulated students answer by themselves. Turn off to type as the student.">
+              <input type="checkbox" checked={S.auto} onChange={e => { S.auto = e.target.checked; S.leads.forEach(l => { if (l.persona) l.auto = e.target.checked; }); commit(); if (e.target.checked) S.leads.forEach(autoReply); }} className="accent-[#008069]" />
+              Students auto-reply
+            </label>
+            <div className="relative">
+              <button onClick={() => setMenu(m => !m)} className="rounded-xl bg-white ring-1 ring-slate-200 px-3.5 py-2 text-sm font-semibold text-navy flex items-center gap-1.5">+ New lead <Icon name="chevD" size={14} /></button>
+              {menu && (
+                <div className="absolute right-0 mt-1 w-56 rounded-xl bg-white shadow-xl ring-1 ring-black/10 p-1 z-20 anim-up">
+                  {["fb", "ig", "call", "web"].map(s => (
+                    <button key={s} onClick={() => newLead(s)} className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-slate-50 text-left"><SourceBadge src={s} size={22} />{SOURCES[s].label}</button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button onClick={runDemo} className="rounded-xl bg-[#25D366] text-white px-4 py-2 text-sm font-bold shadow-sm hover:brightness-95">▶ Run demo</button>
+            <button onClick={reset} className="rounded-xl px-3 py-2 text-sm text-slate-500 hover:text-navy" title="Clear setter demo"><Icon name="refresh" size={15} /></button>
+          </div>
+        </div>
+
+        {tab === "inbox" && (
+          <div className="mt-4 grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)_340px] items-start">
+            {/* Lead list */}
+            <div className="rounded-2xl bg-white ring-1 ring-black/5 overflow-hidden">
+              <div className="px-4 py-3 border-b border-slate-100 text-sm font-bold text-navy flex items-center justify-between">Conversations <span className="text-xs font-semibold text-slate-400">{S.leads.length}</span></div>
+              <div className="max-h-72 lg:max-h-[640px] overflow-y-auto scroll-thin">
+                {!leads.length && (
+                  <div className="p-5 text-sm text-slate-500 space-y-3">
+                    <p>No leads yet. Click <b className="text-[#008069]">▶ Run demo</b> to send 8 leads in (Facebook ads, Instagram, a missed call, website forms) and watch the AI message each one within seconds.</p>
+                    <p>Then use <b>+1 hour</b> / <b>+1 day</b> at the top to see follow-ups and reminders go out on their own.</p>
+                  </div>
+                )}
+                {leads.map(l => {
+                  const last = [...l.msgs].reverse().find(m => m.from !== "sys");
+                  return (
+                    <button key={l.id} onClick={() => setSelId(l.id)} className={"w-full text-left px-3 py-2.5 flex gap-3 items-start border-b border-slate-100 transition " + (l.id === selId ? "bg-gold-soft/60" : "hover:bg-slate-50")}>
+                      <div className="relative shrink-0">
+                        <div className="h-10 w-10 rounded-full bg-navy text-white grid place-items-center text-sm font-bold">{initialsOf(l)}</div>
+                        <span className="absolute -bottom-1 -right-1"><SourceBadge src={l.source} size={18} /></span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2"><span className="font-semibold text-sm truncate">{leadName(l)}</span><span className="text-[10.5px] text-slate-400 shrink-0">{pktClock(l.lastAt)}</span></div>
+                        <div className={"text-[12px] truncate " + (hasUrdu(last?.text) ? "urdu text-right" : "")}>{l.typing ? <i className="text-[#008069]">{l.typing === "bot" ? "AI is typing…" : "student is typing…"}</i> : <span className="text-slate-500">{last ? (last.from === "lead" ? "" : "You: ") + last.text : "…"}</span>}</div>
+                        <div className="mt-1 flex items-center gap-1.5 flex-wrap"><StagePill s={l.stage} />{l.score && <LeadBadge level={l.score} />}</div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Phone */}
+            <div>
+              <div className="text-center text-[12px] text-slate-500 mb-2">{L ? <>What <b className="text-navy">{leadName(L)}</b> sees on WhatsApp</> : "Select a conversation"}</div>
+              <div className="mx-auto w-full max-w-[390px] rounded-[2.4rem] bg-[#111] p-2.5 shadow-2xl">
+                <div className="rounded-[1.9rem] overflow-hidden flex flex-col h-[620px] max-h-[78vh] min-h-[460px] bg-[#EFEAE2]">
+                  <div className="bg-[#008069] text-white text-[11px] px-5 pt-2 flex justify-between"><span>{pktClock(nowMs)}</span><span>4G ▮▮▮ 🔋</span></div>
+                  <div className="bg-[#008069] text-white px-3 pb-2.5 pt-1.5 flex items-center gap-2.5">
+                    <Icon name="chevL" size={20} />
+                    <div className="h-9 w-9 rounded-full bg-gradient-to-br from-gold to-gold-deep text-navy grid place-items-center font-extrabold text-xs shrink-0">{C.brand.initials}</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold text-[15px] truncate flex items-center gap-1">{C.brand.short}<span className="h-3.5 w-3.5 rounded-full bg-[#25D366] grid place-items-center"><Icon name="check" size={9} stroke={4} /></span></div>
+                      <div className="text-[11.5px] text-white/80 truncate">{L?.typing === "bot" ? "typing…" : "Business account"}</div>
+                    </div>
+                    <Icon name="phone" size={18} />
+                  </div>
+                  <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1.5 wa-bg scroll-thin">
+                    {!L && <div className="h-full grid place-items-center text-sm text-slate-500 text-center px-8">Click <b>▶ Run demo</b> or <b>+ New lead</b> to start.</div>}
+                    {L && <div className="text-center mb-2"><span className="inline-block rounded-lg bg-[#FFF5C4] px-3 py-1 text-[11px] text-slate-600 shadow-sm">🔒 Messages from {C.brand.short}'s WhatsApp Business number</span></div>}
+                    {L?.msgs.map(m => <WaMsg key={m.id} m={m} active={m === lastBtnMsg && !L.typing} onTap={b => tap(L, b, false)} />)}
+                    {L?.typing && (
+                      <div className={"flex " + (L.typing === "lead" ? "justify-end" : "")}>
+                        <div className={"rounded-lg px-3 py-2.5 shadow-sm typing " + (L.typing === "lead" ? "bg-[#D9FDD3]" : "bg-white")}><span /><span /><span /></div>
+                      </div>
+                    )}
+                    <div ref={endRef} />
+                  </div>
+                  <form onSubmit={send} className="bg-[#F0F2F5] px-2 py-2">
+                    {L?.aiPaused && (
+                      <div className="flex gap-1 mb-1.5 text-[11px]">
+                        {[["student", "Type as student"], ["counsellor", "Reply as counsellor"]].map(([k, l]) => <button type="button" key={k} onClick={() => setTypeAs(k)} className={"rounded-full px-2.5 py-1 font-semibold " + (typeAs === k ? "bg-[#008069] text-white" : "bg-white text-slate-600")}>{l}</button>)}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <input value={draft} onChange={e => setDraft(e.target.value)} disabled={!L} dir="auto"
+                        placeholder={!L ? "No conversation selected" : L.aiPaused && typeAs === "counsellor" ? "Reply as the counsellor…" : "Type as the student (demo)…"}
+                        className="flex-1 min-w-0 rounded-full bg-white px-4 py-2.5 text-base sm:text-sm outline-none" />
+                      <button disabled={!draft.trim()} className="h-10 w-10 rounded-full bg-[#008069] text-white grid place-items-center disabled:opacity-40 shrink-0" aria-label="Send"><Icon name="send" size={17} /></button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            {/* Lead details */}
+            <div className="rounded-2xl bg-white ring-1 ring-black/5 p-4 space-y-4">
+              {!L ? <div className="text-sm text-slate-500">Lead details, score, booking and the automation timeline show here.</div> : (
+                <>
+                  <div className="flex items-start gap-3">
+                    <div className="h-11 w-11 rounded-full bg-navy text-white grid place-items-center font-bold shrink-0">{initialsOf(L)}</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold text-ink truncate">{leadName(L)}</div>
+                      <div className="text-[12px] text-slate-500 flex items-center gap-1.5"><SourceBadge src={L.source} size={16} /> {SOURCES[L.source].label} · {relTime(L.createdAt, nowMs)}</div>
+                      <div className="mt-1.5 flex gap-1.5 flex-wrap"><StagePill s={L.stage} />{L.score && <LeadBadge level={L.score} />}</div>
+                    </div>
+                  </div>
+
+                  {L.stage === "human" && (
+                    <div className="rounded-xl bg-rose-50 ring-1 ring-rose-200 p-3 text-[13px]">
+                      <div className="font-bold text-rose-800">Counsellor needed</div>
+                      <div className="text-rose-700">{L.handoffReason}. The AI is paused for this chat. Call {fmtPhone(L.phone)} or reply from the phone.</div>
+                      <button onClick={() => resumeAI(L)} className="mt-2 rounded-lg bg-white ring-1 ring-rose-200 px-3 py-1.5 text-xs font-bold text-rose-800">Hand back to AI</button>
+                    </div>
+                  )}
+                  {L.attendDue && (
+                    <div className="rounded-xl bg-amber-50 ring-1 ring-amber-200 p-3 text-[13px]">
+                      <div className="font-bold text-amber-900">Did {(L.data.name || "the student").split(" ")[0]} join the call?</div>
+                      <div className="mt-2 flex gap-2">
+                        <button onClick={() => setAttendance(L, true)} className="rounded-lg bg-emerald-600 text-white px-3 py-1.5 text-xs font-bold">Showed up</button>
+                        <button onClick={() => setAttendance(L, false)} className="rounded-lg bg-white ring-1 ring-amber-300 px-3 py-1.5 text-xs font-bold text-amber-900">No-show: AI re-books</button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="text-[13px]">
+                    <Row k="Phone" v={fmtPhone(L.phone)} />
+                    <Row k="Country" v={L.data.country ? countryLabel(L.data) : "—"} />
+                    <Row k="Education" v={L.data.education || "—"} />
+                    <Row k="CGPA / %" v={L.data.grades?.label || "—"} />
+                    <Row k="English test" v={L.data.english?.label || "—"} />
+                    <Row k="Intake" v={L.data.intake?.label || "—"} />
+                    <Row k="Budget" v={L.data.budget?.label || "—"} />
+                    {L.apptId && <Row k="Free call" v={`${L.apptId} · ${fmtDay(L.date)}, ${fmtTime(L.time)}`} />}
+                  </div>
+                  {L.score && <Reasons checks={scoreLead(leadFields(L.data)).checks} full />}
+
+                  <div>
+                    <div className="text-[12px] font-bold uppercase tracking-wide text-slate-500 mb-1.5">Automation</div>
+                    <ul className="space-y-1.5 text-[12.5px]">
+                      {[...L.queue].sort((a, b) => a.at - b.at).map((q, i) => (
+                        <li key={"q" + i} className="flex items-center gap-2 text-navy"><span className="h-2 w-2 rounded-full bg-gold shrink-0" /><span className="flex-1">{QUEUE_LABEL[q.kind](L.fu)}</span><span className="text-slate-500 shrink-0">{relTime(q.at, nowMs)}</span></li>
+                      ))}
+                      {[...L.log].reverse().slice(0, 8).map((e, i) => (
+                        <li key={"l" + i} className="flex items-start gap-2 text-slate-600"><span className="text-emerald-600 shrink-0">✓</span><span className="flex-1">{e.text}</span><span className="text-slate-400 shrink-0">{pktClock(e.at)}</span></li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5"><span className="text-[12px] font-bold uppercase tracking-wide text-slate-500">Counsellor summary</span><button onClick={() => copy(summary(L))} className="text-[12px] font-semibold text-navy hover:underline">Copy</button></div>
+                    <pre className="whitespace-pre-wrap text-[12px] leading-relaxed bg-slate-50 rounded-xl p-3 text-slate-700 font-sans">{summary(L)}</pre>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {!L.aiPaused ? <button onClick={() => handoff(L, "Counsellor took over the chat", true)} className="rounded-lg ring-1 ring-slate-200 px-3 py-1.5 text-xs font-semibold text-navy hover:bg-slate-50">Take over chat</button>
+                      : <button onClick={() => resumeAI(L)} className="rounded-lg ring-1 ring-slate-200 px-3 py-1.5 text-xs font-semibold text-navy hover:bg-slate-50">Hand back to AI</button>}
+                    <a href={`https://wa.me/${L.phone.replace("+", "")}`} target="_blank" rel="noopener" className="rounded-lg bg-[#25D366] text-white px-3 py-1.5 text-xs font-semibold">Open in WhatsApp</a>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {tab === "pipeline" && (
+          <div className="mt-4 overflow-x-auto scroll-thin pb-2">
+            <div className="grid grid-flow-col auto-cols-[220px] gap-3">
+              {PIPELINE.map(([title, stages]) => {
+                const col = leads.filter(l => stages.includes(l.stage));
+                return (
+                  <div key={title} className="rounded-2xl bg-white/70 ring-1 ring-black/5 p-2.5 min-h-[200px]">
+                    <div className="px-1.5 pb-2 flex items-center justify-between text-[12.5px] font-bold text-navy">{title}<span className="rounded-full bg-slate-100 text-slate-600 px-2 text-[11px]">{col.length}</span></div>
+                    <div className="space-y-2">
+                      {col.map(l => (
+                        <button key={l.id} onClick={() => { setSelId(l.id); setTab("inbox"); }} className="w-full text-left rounded-xl bg-white ring-1 ring-black/5 shadow-sm p-2.5 hover:ring-gold">
+                          <div className="flex items-center gap-2"><SourceBadge src={l.source} size={18} /><span className="font-semibold text-[13px] truncate">{leadName(l)}</span></div>
+                          <div className="text-[11.5px] text-slate-500 mt-1">{l.data.country ? countryLabel(l.data) : "Country not given"}</div>
+                          {l.apptId && <div className="text-[11.5px] text-emerald-700 mt-0.5">{fmtDay(l.date)} · {fmtTime(l.time)}</div>}
+                          {l.coldReason && l.stage === "cold" && <div className="text-[11.5px] text-slate-400 mt-0.5">{l.coldReason}</div>}
+                          {l.score && <div className="mt-1.5"><LeadBadge level={l.score} /></div>}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {tab === "old" && (
+          <div className="mt-4 grid lg:grid-cols-[minmax(0,1fr)_360px] gap-4 items-start">
+            <div className="rounded-2xl bg-white ring-1 ring-black/5 p-5">
+              <h3 className="font-display text-xl font-bold text-navy">Re-engage old leads</h3>
+              <p className="text-sm text-slate-600 mt-1">Every consultancy has a list of students who enquired and never booked. Paste or upload it and the AI messages each one about the next intake, qualifies whoever replies and books their call.</p>
+              <textarea value={oldText} onChange={e => setOldText(e.target.value)} rows={9} placeholder={"Name, Phone, Country\nZara Ahmed, 0321-1234001, Italy"} className="mt-4 w-full rounded-xl bg-slate-50 ring-1 ring-slate-200 p-3 font-mono text-[13px] outline-none focus:ring-2 focus:ring-gold" />
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button onClick={() => { setOldText(OLD_LEADS_SAMPLE); setOldNote(""); }} className="rounded-xl ring-1 ring-slate-200 px-3.5 py-2 text-sm font-semibold text-navy hover:bg-slate-50">Load sample list (8)</button>
+                <label className="rounded-xl ring-1 ring-slate-200 px-3.5 py-2 text-sm font-semibold text-navy hover:bg-slate-50 cursor-pointer">Upload CSV<input type="file" accept=".csv,.txt" onChange={readCsv} className="hidden" /></label>
+                <button onClick={sendOld} disabled={!oldText.trim()} className="rounded-xl bg-[#25D366] text-white px-4 py-2 text-sm font-bold disabled:opacity-40">Send re-engagement</button>
+              </div>
+              {oldNote && <p className="mt-3 text-sm text-navy">{oldNote}</p>}
+            </div>
+            <div className="rounded-2xl bg-white ring-1 ring-black/5 p-5 text-sm text-slate-600 space-y-2.5">
+              <div className="font-bold text-navy">How the live version works</div>
+              <p>Messages go out from the consultancy's own WhatsApp Business number through Meta's official WhatsApp Business API.</p>
+              <p>Meta requires a pre-approved <b>template</b> for the first message to someone who hasn't messaged in the last 24 hours (re-engagement, later follow-ups, reminders). Free-form replies are fine inside the 24-hour window.</p>
+              <p>Only message people who enquired with the consultancy, and stop as soon as someone says they're not interested. The AI does this automatically.</p>
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+function WaMsg({ m, active, onTap }) {
+  if (m.from === "sys") return <div className="text-center my-2"><span className="inline-block rounded-lg bg-white/90 px-3 py-1 text-[11.5px] text-slate-600 shadow-sm">{m.text}</span></div>;
+  const mine = m.from === "lead";   // this is the student's phone
+  const ur = hasUrdu(m.text);
+  return (
+    <div className={"flex anim-up " + (mine ? "justify-end" : "justify-start")}>
+      <div className="max-w-[85%]">
+        <div className={"rounded-lg px-2.5 pt-1.5 pb-1 text-[13.5px] leading-snug shadow-sm break-words " + (mine ? "bg-[#D9FDD3] rounded-tr-none" : "bg-white rounded-tl-none")}>
+          {m.from === "agent" && <div className="text-[11px] font-bold text-[#008069] mb-0.5">Counsellor</div>}
+          <div dir={ur ? "rtl" : "ltr"} className={"whitespace-pre-wrap " + (ur ? "urdu text-right" : "")}>{m.text}</div>
+          <div className="text-right text-[10px] text-slate-500 mt-0.5">{pktClock(m.at)}{mine && <span className="text-[#53BDEB] ml-1">✓✓</span>}</div>
+        </div>
+        {m.buttons && (
+          <div className="mt-0.5 space-y-0.5">
+            {m.buttons.map((b, i) => <button key={i} disabled={!active} onClick={() => onTap(b)} className={"w-full rounded-lg bg-white shadow-sm py-2 text-[13px] font-medium text-[#008069] disabled:text-slate-400 enabled:hover:bg-slate-50 " + (hasUrdu(b.label) ? "urdu" : "")}>{b.label}</button>)}
+          </div>
+        )}
+        {m.tag && <div className="text-[10px] text-slate-500 mt-0.5 ml-1">⚙ {m.tag}</div>}
+      </div>
+    </div>
+  );
+}
+
 /* ============================== APP ============================== */
+const viewFromHash = () => location.hash === "#admin" ? "admin" : location.hash === "#setter" ? "setter" : "book";
+
 function App() {
   const [appts, setAppts] = useState(loadAppts);
-  const [view, setView] = useState(() => location.hash === "#admin" ? "admin" : "book");
+  const [view, setView] = useState(viewFromHash);
   const [, setTick] = useState(0);
   const chatApi = useRef(null);
 
   useEffect(() => { saveAppts(appts); }, [appts]);
   useEffect(() => { const i = setInterval(() => setTick(t => t + 1), 60000); return () => clearInterval(i); }, []);
   useEffect(() => {
-    const onHash = () => setView(location.hash === "#admin" ? "admin" : "book");
+    const onHash = () => setView(viewFromHash());
     const onStorage = e => { if (e.key === STORE_KEY && e.newValue) { try { const v = JSON.parse(e.newValue); if (Array.isArray(v)) setAppts(v); } catch (err) {} } };
     window.addEventListener("hashchange", onHash); window.addEventListener("storage", onStorage);
     return () => { window.removeEventListener("hashchange", onHash); window.removeEventListener("storage", onStorage); };
   }, []);
 
-  const go = v => { setView(v); try { history.replaceState(null, "", location.pathname + location.search + (v === "admin" ? "#admin" : "")); } catch (e) {} window.scrollTo(0, 0); };
+  const go = v => { setView(v); try { history.replaceState(null, "", location.pathname + location.search + (v === "book" ? "" : "#" + v)); } catch (e) {} window.scrollTo(0, 0); };
   const addAppt = a => setAppts(p => [a, ...p]);
   const updateAppt = (id, patch) => setAppts(p => p.map(a => a.id === id ? { ...a, ...patch, updatedAt: Date.now() } : a));
   const resetDemo = () => { if (confirm("Reset to the 8 sample bookings? Bookings made in this browser will be removed.")) setAppts(seedAppointments()); };
@@ -1654,10 +2560,14 @@ function App() {
   if (EMBED) return <ChatWidget {...chatProps} mode="float" />;
   return (
     <>
-      <div style={{ display: view === "admin" ? "none" : undefined }}>
-        <BookingPage onAdmin={() => go("admin")} chat={chatApi} appts={appts}><ChatWidget {...chatProps} mode="page" /></BookingPage>
+      <div style={{ display: view === "book" ? undefined : "none" }}>
+        <BookingPage onAdmin={() => go("admin")} onSetter={() => go("setter")} chat={chatApi} appts={appts}><ChatWidget {...chatProps} mode="page" /></BookingPage>
       </div>
-      {view === "admin" && <Admin appts={appts} updateAppt={updateAppt} resetDemo={resetDemo} onExit={() => go("book")} />}
+      {/* stays mounted so follow-ups and simulated replies keep running while you look at the dashboard */}
+      <div style={{ display: view === "setter" ? undefined : "none" }}>
+        <SetterView appts={appts} addAppt={addAppt} updateAppt={updateAppt} onBook={() => go("book")} onAdmin={() => go("admin")} />
+      </div>
+      {view === "admin" && <Admin appts={appts} updateAppt={updateAppt} resetDemo={resetDemo} onExit={() => go("book")} onSetter={() => go("setter")} />}
     </>
   );
 }
